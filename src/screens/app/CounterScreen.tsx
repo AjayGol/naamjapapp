@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Pressable, Vibration } from 'react-native';
+import { View, StyleSheet, Pressable, Vibration, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Screen, Text, Button, Divider, Icon, AppHeader } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
@@ -18,29 +18,33 @@ export const CounterScreen: React.FC = () => {
   const [mantraName, setMantraName] = useState('Naam');
   const [sessionActive, setSessionActive] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
-  const [malaCount, setMalaCount] = useState(1);
+  const [malaCount, setMalaCount] = useState(0);
+  const [showTapHint, setShowTapHint] = useState(true);
   const toastTimer = useRef<NodeJS.Timeout | null>(null);
   const progress = target > 0 ? Math.min(count / target, 1) : 0;
   const ringSize = 230;
   const ringStroke = 14;
   const ringRadius = (ringSize - ringStroke) / 2;
   const circumference = 2 * Math.PI * ringRadius;
+  const countScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     const loadState = async () => {
-      const [countRaw, targetRaw, mantraRaw, activeRaw, malaRaw] = await Promise.all([
+      const [countRaw, targetRaw, mantraRaw, activeRaw, malaRaw, hintRaw] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.count),
         AsyncStorage.getItem(STORAGE_KEYS.target),
         AsyncStorage.getItem(STORAGE_KEYS.activeMantra),
         AsyncStorage.getItem(STORAGE_KEYS.sessionActive),
         AsyncStorage.getItem(STORAGE_KEYS.malaCount),
+        AsyncStorage.getItem(STORAGE_KEYS.tapHintSeen),
       ]);
 
       if (countRaw) setCount(Number(countRaw) || 0);
       if (targetRaw) setTarget(Number(targetRaw) || 108);
       if (mantraRaw) setMantraName(mantraRaw);
       if (activeRaw) setSessionActive(activeRaw === 'true');
-      if (malaRaw) setMalaCount(Number(malaRaw) || 1);
+      if (malaRaw) setMalaCount(Number(malaRaw) || 0);
+      if (hintRaw === 'true') setShowTapHint(false);
     };
 
     loadState();
@@ -87,6 +91,14 @@ export const CounterScreen: React.FC = () => {
         AsyncStorage.setItem(STORAGE_KEYS.dailyCounts, JSON.stringify(data));
       });
       Vibration.vibrate(10);
+      Animated.sequence([
+        Animated.timing(countScale, { toValue: 1.08, duration: 120, useNativeDriver: true }),
+        Animated.timing(countScale, { toValue: 1, duration: 120, useNativeDriver: true }),
+      ]).start();
+      if (showTapHint) {
+        setShowTapHint(false);
+        AsyncStorage.setItem(STORAGE_KEYS.tapHintSeen, 'true');
+      }
       if (next >= target) {
         setSessionActive(false);
         AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false');
@@ -150,14 +162,11 @@ export const CounterScreen: React.FC = () => {
             <Text weight="semibold">{malaCount}</Text>
           </View>
         </View>
-        <View style={styles.countRow}>
+        <Animated.View style={[styles.countRow, { transform: [{ scale: countScale }] }]}>
           <Text variant="title" weight="bold" color="primary" style={styles.count}>
             {count}
           </Text>
-        </View>
-        <Text variant="xs" color="textSecondary">
-          Goal {target}
-        </Text>
+        </Animated.View>
 
         <View style={styles.ringWrapper}>
           <Svg width={ringSize} height={ringSize} style={styles.ringSvg}>
@@ -168,6 +177,21 @@ export const CounterScreen: React.FC = () => {
               stroke={colors.border}
               strokeWidth={ringStroke}
               fill="none"
+            />
+            <Circle
+              cx={ringSize / 2}
+              cy={ringSize / 2}
+              r={ringRadius}
+              stroke={colors.accent}
+              strokeWidth={ringStroke + 6}
+              opacity={0.12}
+              fill="none"
+              strokeDasharray={`${circumference} ${circumference}`}
+              strokeDashoffset={circumference * (1 - progress)}
+              strokeLinecap="round"
+              rotation={-90}
+              originX={ringSize / 2}
+              originY={ringSize / 2}
             />
             <Circle
               cx={ringSize / 2}
@@ -204,6 +228,11 @@ export const CounterScreen: React.FC = () => {
         <Text variant="sm" color="textSecondary" style={styles.remaining}>
           Remaining {Math.max(target - count, 0)}
         </Text>
+        {showTapHint ? (
+          <Text variant="xs" color="textSecondary" style={styles.hint}>
+            Tap the circle to add a chant
+          </Text>
+        ) : null}
       </View>
 
       {/* Vibration is always on; no toggle UI */}
@@ -270,6 +299,11 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
   },
   ringWrapper: {
     width: 230,
@@ -282,6 +316,9 @@ const styles = StyleSheet.create({
   },
   remaining: {
     marginTop: 6,
+  },
+  hint: {
+    marginTop: 4,
   },
   toggleRow: {
     flexDirection: 'row',

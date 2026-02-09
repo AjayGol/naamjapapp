@@ -10,4 +10,5 @@ export const STORAGE_KEYS = {
   dailyCounts: 'naamjap.dailyCounts',
   mantraList: 'naamjap.mantraList',
   malaCount: 'naamjap.malaCount',
+  tapHintSeen: 'naamjap.tapHintSeen',
 };
