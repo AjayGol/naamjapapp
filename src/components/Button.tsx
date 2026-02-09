@@ -28,7 +28,7 @@ export const Button: React.FC<ButtonProps> = ({
   const backgroundColor =
     variant === 'outline' ? 'transparent' : variant === 'secondary' ? colors.secondary : colors.primary;
   const borderColor = variant === 'outline' ? colors.primary : backgroundColor;
-  const textColor = variant === 'outline' ? colors.primary : colors.background;
+  const textColor = variant === 'outline' ? colors.primary : colors.surface;
 
   return (
     <Pressable
@@ -43,7 +43,7 @@ export const Button: React.FC<ButtonProps> = ({
       {loading ? (
         <ActivityIndicator color={textColor} />
       ) : (
-        <Text weight="semibold" color={variant === 'outline' ? 'primary' : 'text'} style={{ color: textColor }}>
+        <Text weight="semibold" color={variant === 'outline' ? 'primary' : 'textPrimary'} style={{ color: textColor }}>
           {label}
         </Text>
       )}

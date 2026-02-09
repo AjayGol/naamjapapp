@@ -6,7 +6,7 @@ export const Loader: React.FC = () => {
   const { colors } = useTheme();
   return (
     <View style={styles.container}>
-      <ActivityIndicator color={colors.primary} />
+      <ActivityIndicator color={colors.accent} />
     </View>
   );
 };

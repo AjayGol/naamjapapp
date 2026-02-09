@@ -20,15 +20,15 @@ export const TextInput: React.FC<TextInputProps> = ({ label, error, style, ...re
       ) : null}
       <RNTextInput
         {...rest}
-        placeholderTextColor={colors.border}
+        placeholderTextColor={colors.textSecondary}
         style={[
           styles.input,
-          { borderColor: error ? colors.primary : colors.border, color: colors.text },
+          { borderColor: error ? colors.error : colors.border, color: colors.textPrimary },
           style,
         ]}
       />
       {error ? (
-        <Text variant="xs" color="primary" style={styles.error}>
+        <Text variant="xs" color="error" style={styles.error}>
           {error}
         </Text>
       ) : null}

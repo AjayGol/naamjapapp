@@ -9,7 +9,7 @@ export const SignInScreen: React.FC = () => {
         <Text variant="title" weight="bold">
           Welcome
         </Text>
-        <Text variant="sm" color="secondary">
+        <Text variant="sm" color="textSecondary">
           Sign in to continue
         </Text>
         <TextInput label="Email" placeholder="name@example.com" keyboardType="email-address" />

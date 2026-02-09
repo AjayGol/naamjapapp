@@ -4,7 +4,7 @@ import { useTheme } from '../hooks/useTheme';
 
 export type TextVariant = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'title';
 export type TextWeight = 'regular' | 'medium' | 'semibold' | 'bold';
-export type TextColor = 'text' | 'primary' | 'secondary';
+export type TextColor = 'primary' | 'secondary' | 'textPrimary' | 'textSecondary' | 'accent' | 'error';
 
 export type TextProps = RNTextProps & {
   variant?: TextVariant;
@@ -31,14 +31,24 @@ const fontWeights: Record<TextWeight, RNTextProps['style']> = {
 export const Text: React.FC<TextProps> = ({
   variant = 'md',
   weight = 'regular',
-  color = 'text',
+  color = 'textPrimary',
   style,
   children,
   ...rest
 }) => {
   const { colors } = useTheme();
   const textColor =
-    color === 'primary' ? colors.primary : color === 'secondary' ? colors.secondary : colors.text;
+    color === 'primary'
+      ? colors.primary
+      : color === 'secondary'
+        ? colors.secondary
+        : color === 'textSecondary'
+          ? colors.textSecondary
+          : color === 'accent'
+            ? colors.accent
+            : color === 'error'
+              ? colors.error
+              : colors.textPrimary;
 
   return (
     <RNText

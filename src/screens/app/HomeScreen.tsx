@@ -4,7 +4,7 @@ import { Screen, Text, Button, Divider, Icon } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
 
 export const HomeScreen: React.FC = () => {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
 
   return (
     <Screen>
@@ -21,10 +21,7 @@ export const HomeScreen: React.FC = () => {
       <Divider style={styles.divider} />
 
       <View
-        style={[
-          styles.card,
-          { borderColor: colors.border, backgroundColor: isDark ? '#121212' : '#F7F7F7' },
-        ]}
+        style={[styles.card, { borderColor: colors.border, backgroundColor: colors.surface }]}
       >
         <Text variant="lg" weight="semibold">
           Today’s count
@@ -32,7 +29,7 @@ export const HomeScreen: React.FC = () => {
         <Text variant="xl" weight="bold" color="primary" style={styles.count}>
           108
         </Text>
-        <Text variant="sm" color="secondary">
+        <Text variant="sm" color="textSecondary">
           Daily goal: 1000
         </Text>
       </View>

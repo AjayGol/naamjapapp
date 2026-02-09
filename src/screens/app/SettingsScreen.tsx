@@ -18,7 +18,7 @@ export const SettingsScreen: React.FC = () => {
         <Text variant="title" weight="bold">
           Settings
         </Text>
-        <Text variant="sm" color="secondary">
+        <Text variant="sm" color="textSecondary">
           Customize your practice
         </Text>
       </View>
@@ -59,7 +59,7 @@ export const SettingsScreen: React.FC = () => {
       />
       <View style={styles.helperRow}>
         <Icon iconSet="MaterialIcons" iconName="info" size={18} color={colors.secondary} />
-        <Text variant="xs" color="secondary">
+        <Text variant="xs" color="textSecondary">
           This is just a demo field
         </Text>
       </View>

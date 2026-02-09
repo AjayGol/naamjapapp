@@ -4,8 +4,12 @@ export type ThemeColors = {
   primary: string;
   secondary: string;
   background: string;
-  text: string;
+  surface: string;
+  textPrimary: string;
+  textSecondary: string;
   border: string;
+  accent: string;
+  error: string;
 };
 
 export type Theme = {
