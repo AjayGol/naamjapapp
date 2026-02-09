@@ -189,6 +189,7 @@ export const HomeScreen: React.FC = () => {
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
+            <View style={[styles.selectAccent, { backgroundColor: colors.accent }]} />
             <View style={styles.selectBadgeWrap}>
               <View style={[styles.selectBadge, { backgroundColor: colors.primary }]}>
                 <Icon iconSet="MaterialIcons" iconName="spa" size={18} color={colors.surface} />
@@ -341,6 +342,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  selectAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 6,
+    borderTopLeftRadius: 18,
+    borderBottomLeftRadius: 18,
   },
   selectBadgeWrap: {
     width: 44,
