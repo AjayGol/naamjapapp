@@ -10,6 +10,7 @@ import type { AppTabParamList } from '../../navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../../navigation/types';
 import { getStreaks, getWeekdayKey } from '../../utils/date';
+import LinearGradient from 'react-native-linear-gradient';
 
 type SessionEntry = {
   id: string;
@@ -186,27 +187,6 @@ export const HomeScreen: React.FC = () => {
               color={colors.primary}
             />
           </Pressable>
-          {sessionActive ? (
-            <View
-              style={[
-                styles.statusPill,
-                {
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                },
-              ]}
-            >
-              <Icon
-                iconSet="MaterialIcons"
-                iconName="radio-button-checked"
-                size={14}
-                color={colors.secondary}
-              />
-              <Text variant="xs" color="textSecondary">
-                Active
-              </Text>
-            </View>
-          ) : null}
         </View>
       </View>
 
@@ -216,67 +196,108 @@ export const HomeScreen: React.FC = () => {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-
         <View
           style={[
-            styles.progressCard,
-            { backgroundColor: colors.surface, borderColor: colors.border },
+            styles.heroCard,
+            { borderColor: colors.border, backgroundColor: colors.surface },
           ]}
         >
-          <View style={styles.progressHeader}>
-            <View>
-              <Text variant="sm" color="textSecondary">
-                Today
-              </Text>
-              <Text variant="xl" weight="bold" color="primary">
-                {count}
-              </Text>
+          <LinearGradient
+            colors={[`${colors.primary}12`, colors.surface]}
+            style={styles.heroGradient}
+          />
+          <View style={styles.heroContent}>
+            <View style={styles.heroTop}>
+              <View>
+                <Text variant="sm" color="textSecondary">
+                  Today
+                </Text>
+                <Text variant="xl" weight="bold" color="primary">
+                  {count}
+                </Text>
+              </View>
+              <View style={styles.heroTarget}>
+                <Text variant="xs" color="textSecondary">
+                  Goal
+                </Text>
+                <Text variant="lg" weight="semibold">
+                  {target}
+                </Text>
+              </View>
             </View>
-            <View style={styles.targetBox}>
-              <Text variant="xs" color="textSecondary">
-                Target
-              </Text>
-              <Text variant="lg" weight="semibold">
-                {target}
-              </Text>
-            </View>
-          </View>
-          <View
-            style={[styles.progressTrack, { backgroundColor: colors.border }]}
-          >
             <View
-              style={[
-                styles.progressFill,
-                {
-                  width: `${Math.round(progress * 100)}%`,
-                  backgroundColor: colors.accent,
-                },
-              ]}
-            />
+              style={[styles.heroTrack, { backgroundColor: colors.border }]}
+            >
+              <View
+                style={[
+                  styles.heroFill,
+                  {
+                    width: `${Math.round(progress * 100)}%`,
+                    backgroundColor: colors.accent,
+                  },
+                ]}
+              />
+            </View>
+            <View style={styles.heroFooter}>
+              <Text variant="xs" color="textSecondary">
+                Remaining {Math.max(target - count, 0)}
+              </Text>
+              {sessionActive ? (
+                <View
+                  style={[
+                    styles.activeChip,
+                    { backgroundColor: `${colors.secondary}1A` },
+                  ]}
+                >
+                  <Icon
+                    iconSet="MaterialIcons"
+                    iconName="radio-button-checked"
+                    size={12}
+                    color={colors.secondary}
+                  />
+                  <Text variant="xs" color="textSecondary">
+                    Active
+                  </Text>
+                </View>
+              ) : null}
+            </View>
+            {sessionActive && count < target ? (
+              <View style={styles.heroContinueRow}>
+                <View style={styles.heroContinueText}>
+                  <Text weight="semibold">Continue your session</Text>
+                  <Text variant="xs" color="textSecondary">
+                    {activeMantra || 'Your mantra'} · {target - count} left
+                  </Text>
+                </View>
+                <Button
+                  label="Continue"
+                  onPress={continueChanting}
+                  style={styles.heroContinueBtn}
+                />
+              </View>
+            ) : null}
           </View>
-          <Text variant="xs" color="textSecondary">
-            Remaining {Math.max(target - count, 0)}
-          </Text>
         </View>
 
-        <Pressable
-          onPress={() => stackNavigation.navigate('Goals')}
-          style={[
-            styles.goalsCard,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
-        >
-          <View style={styles.goalsLeft}>
-            <View
-              style={[
-                styles.goalsBadge,
-                { backgroundColor: colors.primary },
-              ]}
-            >
-              <Icon iconSet="MaterialIcons" iconName="flag" size={16} color={colors.surface} />
-            </View>
-            <View style={styles.goalsText}>
-              <Text weight="semibold">Goals & reminders</Text>
+        <View style={styles.cardRow}>
+          <Pressable
+            onPress={() => stackNavigation.navigate('Goals')}
+            style={[
+              styles.goalsCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <View style={[styles.goalsAccent, { backgroundColor: colors.accent }]} />
+            <View style={styles.goalsBody}>
+              <View style={styles.goalsHeader}>
+                <Text weight="semibold">Goals & reminders</Text>
+                <Icon
+                  iconSet="MaterialIcons"
+                  iconName="chevron-right"
+                  size={22}
+                  color={colors.textSecondary}
+                />
+              </View>
               <Text variant="xs" color="textSecondary">
                 Today goal {target}
                 {reminderEnabled && reminderTimeLabel
@@ -284,65 +305,38 @@ export const HomeScreen: React.FC = () => {
                   : ''}
               </Text>
             </View>
-          </View>
-          <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
-        </Pressable>
+          </Pressable>
 
-        <View style={styles.streakRow}>
           <View
             style={[
               styles.streakCard,
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <Text variant="xs" color="textSecondary">
-              Current streak
-            </Text>
-            <Text variant="lg" weight="bold">
-              {streaks.current} days
-            </Text>
-          </View>
-          <View
-            style={[
-              styles.streakCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <Text variant="xs" color="textSecondary">
-              Best streak
-            </Text>
-            <Text variant="lg" weight="bold">
-              {streaks.longest} days
-            </Text>
-          </View>
-        </View>
-
-        {sessionActive && count < target ? (
-          <View
-            style={[
-              styles.bannerCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-          >
-            <Icon
-              iconSet="MaterialIcons"
-              iconName="pending-actions"
-              size={18}
-              color={colors.secondary}
-            />
-            <View style={styles.bannerText}>
-              <Text weight="semibold">Continue your session</Text>
-              <Text variant="sm" color="textSecondary">
-                {activeMantra || 'Your mantra'} · {target - count} left
+            <View style={styles.streakCol}>
+              <Text variant="xs" color="textSecondary">
+                Current streak
+              </Text>
+              <Text variant="lg" weight="bold">
+                {streaks.current} days
               </Text>
             </View>
-            <Button
-              label="Continue"
-              onPress={continueChanting}
-              style={styles.bannerButton}
+            <View
+              style={[
+                styles.streakDivider,
+                { backgroundColor: colors.border },
+              ]}
             />
+            <View style={styles.streakCol}>
+              <Text variant="xs" color="textSecondary">
+                Best streak
+              </Text>
+              <Text variant="lg" weight="bold">
+                {streaks.longest} days
+              </Text>
+            </View>
           </View>
-        ) : null}
+        </View>
 
         {!sessionActive && lastCompletedMantra ? (
           <View
@@ -560,43 +554,95 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
   divider: {
     marginVertical: 16,
   },
-  progressCard: {
-    borderRadius: 18,
-    padding: 18,
+  heroCard: {
+    borderRadius: 22,
     borderWidth: 1,
-    gap: 12,
+    overflow: 'hidden',
   },
-  progressHeader: {
+  heroGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  heroContent: {
+    padding: 18,
+    gap: 14,
+  },
+  heroTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  targetBox: {
+  heroTarget: {
     alignItems: 'flex-end',
   },
-  progressTrack: {
-    height: 10,
+  heroTrack: {
+    height: 12,
     borderRadius: 999,
     overflow: 'hidden',
   },
-  progressFill: {
+  heroFill: {
     height: '100%',
     borderRadius: 999,
   },
-  goalsCard: {
+  heroFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  heroContinueRow: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderColor: 'rgba(0,0,0,0.06)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  heroContinueText: {
+    flex: 1,
+    gap: 2,
+  },
+  heroContinueBtn: {
+    minHeight: 36,
+    paddingHorizontal: 12,
+  },
+  activeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  cardRow: {
+    gap: 12,
     marginTop: 12,
+  },
+  goalsCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  goalsAccent: {
+    width: 4,
+    height: 44,
+    borderRadius: 999,
+  },
+  goalsBody: {
+    flex: 1,
+    gap: 6,
+  },
+  goalsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  streakCard: {
     borderWidth: 1,
     borderRadius: 16,
     padding: 14,
@@ -604,49 +650,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  goalsLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  goalsBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  goalsText: {
+  streakCol: {
     gap: 4,
-  },
-  bannerCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 12,
-  },
-  bannerText: {
     flex: 1,
-    gap: 2,
   },
-  bannerButton: {
-    minHeight: 36,
-    paddingHorizontal: 10,
-  },
-  streakRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
-  },
-  streakCard: {
-    flex: 1,
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 14,
-    gap: 6,
+  streakDivider: {
+    width: 1,
+    height: 36,
+    marginHorizontal: 12,
   },
   actions: {
     marginTop: 24,
