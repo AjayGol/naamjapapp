@@ -18,6 +18,7 @@ export const CounterScreen: React.FC = () => {
   const [mantraName, setMantraName] = useState('Naam');
   const [sessionActive, setSessionActive] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
+  const [malaCount, setMalaCount] = useState(1);
   const toastTimer = useRef<NodeJS.Timeout | null>(null);
   const progress = target > 0 ? Math.min(count / target, 1) : 0;
   const ringSize = 230;
@@ -27,17 +28,19 @@ export const CounterScreen: React.FC = () => {
 
   useEffect(() => {
     const loadState = async () => {
-      const [countRaw, targetRaw, mantraRaw, activeRaw] = await Promise.all([
+      const [countRaw, targetRaw, mantraRaw, activeRaw, malaRaw] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.count),
         AsyncStorage.getItem(STORAGE_KEYS.target),
         AsyncStorage.getItem(STORAGE_KEYS.activeMantra),
         AsyncStorage.getItem(STORAGE_KEYS.sessionActive),
+        AsyncStorage.getItem(STORAGE_KEYS.malaCount),
       ]);
 
       if (countRaw) setCount(Number(countRaw) || 0);
       if (targetRaw) setTarget(Number(targetRaw) || 108);
       if (mantraRaw) setMantraName(mantraRaw);
       if (activeRaw) setSessionActive(activeRaw === 'true');
+      if (malaRaw) setMalaCount(Number(malaRaw) || 1);
     };
 
     loadState();
@@ -58,6 +61,10 @@ export const CounterScreen: React.FC = () => {
   useEffect(() => {
     AsyncStorage.setItem(STORAGE_KEYS.sessionActive, String(sessionActive));
   }, [sessionActive]);
+
+  useEffect(() => {
+    AsyncStorage.setItem(STORAGE_KEYS.malaCount, String(malaCount));
+  }, [malaCount]);
 
   useEffect(() => {
     return () => {
@@ -85,6 +92,11 @@ export const CounterScreen: React.FC = () => {
         AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false');
         AsyncStorage.setItem(STORAGE_KEYS.lastCompletedMantra, mantraName);
         AsyncStorage.setItem(STORAGE_KEYS.lastCompletedAt, new Date().toISOString());
+        setMalaCount(prev => {
+          const nextMala = prev + 1;
+          AsyncStorage.setItem(STORAGE_KEYS.malaCount, String(nextMala));
+          return nextMala;
+        });
         setToastVisible(true);
         if (toastTimer.current) {
           clearTimeout(toastTimer.current);
@@ -119,19 +131,31 @@ export const CounterScreen: React.FC = () => {
       <Divider style={styles.divider} />
 
       <View style={styles.center}>
-        <Pressable
-          onPress={() => navigation.navigate('SelectNaam')}
-          style={[styles.mantraPill, { backgroundColor: colors.surface, borderColor: colors.border }]}
-        >
-          <Icon iconSet="MaterialIcons" iconName="spa" size={16} color={colors.primary} />
-          <Text variant="sm" weight="semibold">
-            {mantraName}
-          </Text>
-          <Icon iconSet="MaterialIcons" iconName="chevron-right" size={18} color={colors.textSecondary} />
-        </Pressable>
+        <View style={styles.topRow}>
+          <Pressable
+            onPress={() => navigation.navigate('SelectNaam')}
+            style={[styles.mantraPill, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          >
+            <Icon iconSet="MaterialIcons" iconName="spa" size={16} color={colors.primary} />
+            <Text variant="sm" weight="semibold">
+              {mantraName}
+            </Text>
+            <Icon iconSet="MaterialIcons" iconName="chevron-right" size={18} color={colors.textSecondary} />
+          </Pressable>
+          <View style={[styles.malaPill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Icon iconSet="MaterialIcons" iconName="whatshot" size={16} color={colors.accent} />
+            <Text variant="xs" color="textSecondary">
+              Mala
+            </Text>
+            <Text weight="semibold">{malaCount}</Text>
+          </View>
+        </View>
         <View style={styles.countRow}>
           <Text variant="title" weight="bold" color="primary" style={styles.count}>
             {count}
+          </Text>
+          <Text variant="sm" color="textSecondary">
+            / {target}
           </Text>
         </View>
 
@@ -193,6 +217,9 @@ export const CounterScreen: React.FC = () => {
             </Text>
           </View>
         </View>
+        <Text variant="xs" color="textSecondary" style={styles.helper}>
+          Tap the circle to add a chant
+        </Text>
       </View>
 
       {/* Vibration is always on; no toggle UI */}
@@ -221,12 +248,26 @@ const styles = StyleSheet.create({
     gap: 18,
     marginTop: 20,
   },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   mantraPill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 14,
     paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  malaPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1,
   },
@@ -263,6 +304,9 @@ const styles = StyleSheet.create({
   statItem: {
     alignItems: 'center',
     gap: 4,
+  },
+  helper: {
+    marginTop: 2,
   },
   toggleRow: {
     flexDirection: 'row',
