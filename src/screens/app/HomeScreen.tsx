@@ -90,16 +90,17 @@ export const HomeScreen: React.FC = () => {
       : {};
     setStreaks(getStreaks(counts));
     setHistory(historyRaw ? (JSON.parse(historyRaw) as SessionEntry[]) : []);
-    setFavorites(
-      favoritesRaw ? (JSON.parse(favoritesRaw) as string[]) : [],
-    );
+    setFavorites(favoritesRaw ? (JSON.parse(favoritesRaw) as string[]) : []);
     setReminderEnabled(reminderEnabledRaw === 'true');
     if (reminderTimeRaw) {
       const [h, m] = reminderTimeRaw.split(':').map(Number);
       const date = new Date();
       date.setHours(h || 8, m || 0, 0, 0);
       setReminderTimeLabel(
-        date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+        date.toLocaleTimeString('en-US', {
+          hour: 'numeric',
+          minute: '2-digit',
+        }),
       );
     } else {
       setReminderTimeLabel('');
@@ -129,10 +130,7 @@ export const HomeScreen: React.FC = () => {
     await Promise.all([
       AsyncStorage.setItem(STORAGE_KEYS.activeMantra, trimmed),
       AsyncStorage.setItem(STORAGE_KEYS.count, '0'),
-      AsyncStorage.setItem(
-        STORAGE_KEYS.target,
-        String(defaultTarget || 108),
-      ),
+      AsyncStorage.setItem(STORAGE_KEYS.target, String(defaultTarget || 108)),
       AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'true'),
     ]);
 
@@ -287,7 +285,9 @@ export const HomeScreen: React.FC = () => {
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <View style={[styles.goalsAccent, { backgroundColor: colors.accent }]} />
+            <View
+              style={[styles.goalsAccent, { backgroundColor: colors.accent }]}
+            />
             <View style={styles.goalsBody}>
               <View style={styles.goalsHeader}>
                 <Text weight="semibold">Goals & reminders</Text>
@@ -313,27 +313,40 @@ export const HomeScreen: React.FC = () => {
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <View style={styles.streakCol}>
+            <View style={styles.streakHeader}>
               <Text variant="xs" color="textSecondary">
-                Current streak
+                Streaks
               </Text>
-              <Text variant="lg" weight="bold">
-                {streaks.current} days
-              </Text>
+              <Icon
+                iconSet="MaterialIcons"
+                iconName="local-fire-department"
+                size={16}
+                color={colors.accent}
+              />
             </View>
-            <View
-              style={[
-                styles.streakDivider,
-                { backgroundColor: colors.border },
-              ]}
-            />
-            <View style={styles.streakCol}>
-              <Text variant="xs" color="textSecondary">
-                Best streak
-              </Text>
-              <Text variant="lg" weight="bold">
-                {streaks.longest} days
-              </Text>
+            <View style={styles.streakBody}>
+              <View style={styles.streakCol}>
+                <Text variant="xs" color="textSecondary">
+                  Current
+                </Text>
+                <Text variant="lg" weight="bold">
+                  {streaks.current} days
+                </Text>
+              </View>
+              <View
+                style={[
+                  styles.streakDivider,
+                  { backgroundColor: colors.border },
+                ]}
+              />
+              <View style={styles.streakCol}>
+                <Text variant="xs" color="textSecondary">
+                  Best
+                </Text>
+                <Text variant="lg" weight="bold">
+                  {streaks.longest} days
+                </Text>
+              </View>
             </View>
           </View>
         </View>
@@ -341,17 +354,24 @@ export const HomeScreen: React.FC = () => {
         {!sessionActive && lastCompletedMantra ? (
           <View
             style={[
-              styles.bannerCard,
+              styles.completedCard,
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <Icon
-              iconSet="MaterialIcons"
-              iconName="verified"
-              size={18}
-              color={colors.accent}
-            />
-            <View style={styles.bannerText}>
+            <View
+              style={[
+                styles.completedIcon,
+                { backgroundColor: `${colors.accent}1A` },
+              ]}
+            >
+              <Icon
+                iconSet="MaterialIcons"
+                iconName="verified"
+                size={18}
+                color={colors.accent}
+              />
+            </View>
+            <View style={styles.completedText}>
               <Text weight="semibold" color="accent">
                 Completed 108
               </Text>
@@ -372,77 +392,102 @@ export const HomeScreen: React.FC = () => {
               Tap to change
             </Text>
           </View>
-          <Pressable
-            onPress={openSelectNaam}
+          <View
             style={[
               styles.selectCard,
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <View
-              style={[styles.selectAccent, { backgroundColor: colors.accent }]}
-            />
-            <View style={styles.selectBadgeWrap}>
+            <Pressable onPress={openSelectNaam} style={styles.selectMain}>
               <View
                 style={[
-                  styles.selectBadge,
-                  { backgroundColor: colors.primary },
+                  styles.selectAccent,
+                  { backgroundColor: colors.accent },
                 ]}
-              >
-                <Icon
-                  iconSet="MaterialIcons"
-                  iconName="spa"
-                  size={18}
-                  color={colors.surface}
-                />
-              </View>
-            </View>
-            <View style={styles.selectContent}>
-              <Text variant="xs" color="textSecondary">
-                Current Naam
-              </Text>
-              <Text variant="lg" weight="bold">
-                {activeMantra || 'Select Naam'}
-              </Text>
-              <View style={styles.selectMeta}>
-                <Icon
-                  iconSet="MaterialIcons"
-                  iconName="touch-app"
-                  size={14}
-                  color={colors.textSecondary}
-                />
-                <Text variant="xs" color="textSecondary">
-                  Open selection
-                </Text>
-              </View>
-            </View>
-            <View style={styles.selectAction}>
-              {isFavorite ? (
+              />
+              <View style={styles.selectBadgeWrap}>
                 <View
                   style={[
-                    styles.favoritePill,
+                    styles.selectBadge,
                     { backgroundColor: colors.primary },
                   ]}
                 >
                   <Icon
                     iconSet="MaterialIcons"
-                    iconName="star"
-                    size={12}
+                    iconName="spa"
+                    size={18}
                     color={colors.surface}
                   />
-                  <Text variant="xs" color="surface">
-                    Favorite
+                </View>
+              </View>
+              <View style={styles.selectContent}>
+                <Text variant="xs" color="textSecondary">
+                  Current Naam
+                </Text>
+                <Text variant="lg" weight="bold">
+                  {activeMantra || 'Select Naam'}
+                </Text>
+                <View style={styles.selectMeta}>
+                  <Icon
+                    iconSet="MaterialIcons"
+                    iconName="touch-app"
+                    size={14}
+                    color={colors.textSecondary}
+                  />
+                  <Text variant="xs" color="textSecondary">
+                    Open selection
                   </Text>
                 </View>
-              ) : null}
-              <Icon
-                iconSet="MaterialIcons"
-                iconName="chevron-right"
-                size={22}
-                color={colors.textSecondary}
+              </View>
+              <View style={styles.selectAction}>
+                {isFavorite ? (
+                  <View
+                    style={[
+                      styles.favoritePill,
+                      { backgroundColor: colors.primary },
+                    ]}
+                  >
+                    <Icon
+                      iconSet="MaterialIcons"
+                      iconName="star"
+                      size={12}
+                      color={colors.surface}
+                    />
+                    <Text variant="xs" color="surface">
+                      Favorite
+                    </Text>
+                  </View>
+                ) : null}
+                <Icon
+                  iconSet="MaterialIcons"
+                  iconName="chevron-right"
+                  size={22}
+                  color={colors.textSecondary}
+                />
+              </View>
+            </Pressable>
+            <Divider />
+            <View style={styles.selectActions}>
+              <Button
+                label={sessionActive ? 'Continue Chanting' : 'Start Chanting'}
+                onPress={sessionActive ? continueChanting : startChanting}
+                style={styles.selectPrimary}
+              />
+              <Button
+                label="Reset"
+                variant="outline"
+                onPress={async () => {
+                  setCount(0);
+                  setSessionActive(false);
+                  await Promise.all([
+                    AsyncStorage.setItem(STORAGE_KEYS.count, '0'),
+                    AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false'),
+                  ]);
+                }}
+                style={styles.selectSecondary}
               />
             </View>
-          </Pressable>
+          </View>
           {error ? (
             <Text variant="xs" color="error">
               {error}
@@ -450,7 +495,7 @@ export const HomeScreen: React.FC = () => {
           ) : null}
         </View>
 
-        <View style={styles.sectionHeader}>
+        <View style={[styles.sectionHeader, { marginTop: 15 }]}>
           <Text variant="sm" weight="semibold">
             Recent sessions
           </Text>
@@ -498,25 +543,6 @@ export const HomeScreen: React.FC = () => {
             );
           })
         )}
-
-        <View style={styles.actions}>
-          <Button
-            label={sessionActive ? 'Continue Chanting' : 'Start Chanting'}
-            onPress={sessionActive ? continueChanting : startChanting}
-          />
-          <Button
-            label="Reset"
-            variant="outline"
-            onPress={async () => {
-              setCount(0);
-              setSessionActive(false);
-              await Promise.all([
-                AsyncStorage.setItem(STORAGE_KEYS.count, '0'),
-                AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false'),
-              ]);
-            }}
-          />
-        </View>
       </ScrollView>
     </Screen>
   );
@@ -646,9 +672,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 16,
     padding: 14,
+    gap: 10,
+  },
+  streakHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  streakBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   streakCol: {
     gap: 4,
@@ -659,9 +692,25 @@ const styles = StyleSheet.create({
     height: 36,
     marginHorizontal: 12,
   },
-  actions: {
-    marginTop: 24,
-    gap: 12,
+  completedCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 12,
+  },
+  completedIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  completedText: {
+    flex: 1,
+    gap: 2,
   },
   form: {
     marginTop: 18,
@@ -675,12 +724,14 @@ const styles = StyleSheet.create({
   selectCard: {
     borderWidth: 1,
     borderRadius: 18,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  selectMain: {
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    position: 'relative',
-    overflow: 'hidden',
   },
   selectAccent: {
     position: 'absolute',
@@ -717,6 +768,21 @@ const styles = StyleSheet.create({
   selectAction: {
     alignItems: 'flex-end',
     gap: 2,
+  },
+  selectActions: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    paddingTop: 12,
+  },
+  selectPrimary: {
+    flex: 1,
+    minHeight: 44,
+  },
+  selectSecondary: {
+    flex: 1,
+    minHeight: 44,
   },
   favoritePill: {
     flexDirection: 'row',
