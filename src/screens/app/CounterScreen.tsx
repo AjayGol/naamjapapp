@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, StyleSheet, Pressable, Modal } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { View, StyleSheet, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Screen, Text, Button, Divider, Icon, AppHeader } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
@@ -19,7 +19,8 @@ export const CounterScreen: React.FC = () => {
   const [vibrationEnabled, setVibrationEnabled] = useState(true);
   const [mantraName, setMantraName] = useState('Naam');
   const [sessionActive, setSessionActive] = useState(false);
-  const [showComplete, setShowComplete] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+  const toastTimer = useRef<NodeJS.Timeout | null>(null);
   const progress = target > 0 ? Math.min(count / target, 1) : 0;
   const ringSize = 230;
   const ringStroke = 14;
@@ -72,6 +73,14 @@ export const CounterScreen: React.FC = () => {
     AsyncStorage.setItem(STORAGE_KEYS.sessionActive, String(sessionActive));
   }, [sessionActive]);
 
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) {
+        clearTimeout(toastTimer.current);
+      }
+    };
+  }, []);
+
   const increment = useCallback(() => {
     setCount(prev => {
       if (prev >= target) {
@@ -89,7 +98,19 @@ export const CounterScreen: React.FC = () => {
         AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false');
         AsyncStorage.setItem(STORAGE_KEYS.lastCompletedMantra, mantraName);
         AsyncStorage.setItem(STORAGE_KEYS.lastCompletedAt, new Date().toISOString());
-        setShowComplete(true);
+        setToastVisible(true);
+        if (toastTimer.current) {
+          clearTimeout(toastTimer.current);
+        }
+        toastTimer.current = setTimeout(() => {
+          setToastVisible(false);
+        }, 2000);
+        setTimeout(() => {
+          setCount(0);
+          setSessionActive(true);
+          AsyncStorage.setItem(STORAGE_KEYS.count, '0');
+          AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'true');
+        }, 500);
       } else {
         setSessionActive(true);
       }
@@ -100,22 +121,9 @@ export const CounterScreen: React.FC = () => {
   const reset = useCallback(() => {
     setCount(0);
     setSessionActive(false);
-    setShowComplete(false);
+    setToastVisible(false);
     AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false');
   }, []);
-
-  const chantAgain = useCallback(() => {
-    setCount(0);
-    setSessionActive(true);
-    setShowComplete(false);
-    AsyncStorage.setItem(STORAGE_KEYS.count, '0');
-    AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'true');
-  }, []);
-
-  const goHome = useCallback(() => {
-    setShowComplete(false);
-    navigation.navigate('Home');
-  }, [navigation]);
 
   return (
     <Screen>
@@ -229,23 +237,17 @@ export const CounterScreen: React.FC = () => {
       </View>
 
       <Button label="Reset" variant="outline" onPress={reset} style={styles.reset} />
-
-      <Modal transparent visible={showComplete} animationType="fade">
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.modalCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Text variant="lg" weight="bold" color="accent">
-              Congratulations
-            </Text>
-            <Text variant="sm" color="textSecondary">
-              {mantraName} completed {target} chants.
-            </Text>
-            <View style={styles.modalActions}>
-              <Button label="Chant Again" onPress={chantAgain} />
-              <Button label="Back Home" variant="outline" onPress={goHome} />
-            </View>
-          </View>
+      {toastVisible ? (
+        <View style={[styles.toast, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Icon iconSet="MaterialIcons" iconName="verified" size={18} color={colors.accent} />
+          <Text weight="semibold" color="accent">
+            Completed 108
+          </Text>
+          <Text variant="xs" color="textSecondary">
+            {mantraName} · restarting
+          </Text>
         </View>
-      </Modal>
+      ) : null}
     </Screen>
   );
 };
@@ -321,22 +323,17 @@ const styles = StyleSheet.create({
   reset: {
     marginTop: 24,
   },
-  modalBackdrop: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    padding: 24,
-  },
-  modalCard: {
-    width: '100%',
-    borderRadius: 16,
-    padding: 20,
+  toast: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    bottom: 24,
+    borderRadius: 14,
     borderWidth: 1,
-    gap: 12,
-  },
-  modalActions: {
-    marginTop: 8,
-    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
 });
