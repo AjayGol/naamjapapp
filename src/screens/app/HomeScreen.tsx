@@ -184,20 +184,31 @@ export const HomeScreen: React.FC = () => {
           </View>
           <Pressable
             onPress={openSelectNaam}
-            style={[styles.selectRow, { borderColor: colors.border, backgroundColor: colors.surface }]}
+            style={[
+              styles.selectCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
           >
-            <View style={styles.selectLeft}>
-              <View style={[styles.selectIcon, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                <Icon iconSet="MaterialIcons" iconName="spa" size={18} color={colors.primary} />
+            <View style={styles.selectBadgeWrap}>
+              <View style={[styles.selectBadge, { backgroundColor: colors.primary }]}>
+                <Icon iconSet="MaterialIcons" iconName="spa" size={18} color={colors.surface} />
               </View>
-              <View style={styles.selectText}>
-                <Text weight="semibold">{activeMantra || 'Select Naam'}</Text>
+            </View>
+            <View style={styles.selectContent}>
+              <Text variant="xs" color="textSecondary">
+                Current Naam
+              </Text>
+              <Text variant="lg" weight="bold">
+                {activeMantra || 'Select Naam'}
+              </Text>
+              <View style={styles.selectMeta}>
+                <Icon iconSet="MaterialIcons" iconName="touch-app" size={14} color={colors.textSecondary} />
                 <Text variant="xs" color="textSecondary">
-                  {activeMantra ? 'Current selection' : 'Pick a name to begin'}
+                  Open selection
                 </Text>
               </View>
             </View>
-            <View style={styles.selectRight}>
+            <View style={styles.selectAction}>
               <Text variant="xs" color="textSecondary">
                 Change
               </Text>
@@ -323,31 +334,39 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     justifyContent: 'space-between',
   },
-  selectRow: {
+  selectCard: {
     borderWidth: 1,
-    borderRadius: 16,
-    padding: 14,
-  },
-  selectLeft: {
+    borderRadius: 18,
+    padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    flex: 1,
+    gap: 12,
   },
-  selectRight: {
-    alignItems: 'flex-end',
-    gap: 2,
-  },
-  selectIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    borderWidth: 1,
+  selectBadgeWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  selectText: {
+  selectBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectContent: {
     flex: 1,
+    gap: 4,
+  },
+  selectMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  selectAction: {
+    alignItems: 'flex-end',
     gap: 2,
   },
   chipRow: {
