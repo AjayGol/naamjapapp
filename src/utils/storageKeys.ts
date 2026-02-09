@@ -11,4 +11,11 @@ export const STORAGE_KEYS = {
   mantraList: 'naamjap.mantraList',
   malaCount: 'naamjap.malaCount',
   tapHintSeen: 'naamjap.tapHintSeen',
+  sessionHistory: 'naamjap.sessionHistory',
+  favoriteMantras: 'naamjap.favoriteMantras',
+  dailyGoals: 'naamjap.dailyGoals',
+  reminderEnabled: 'naamjap.reminderEnabled',
+  reminderTime: 'naamjap.reminderTime',
+  focusTimer: 'naamjap.focusTimer',
+  currentMood: 'naamjap.currentMood',
 };

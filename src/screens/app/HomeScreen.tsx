@@ -9,6 +9,16 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { AppTabParamList } from '../../navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../../navigation/types';
+import { getStreaks, getWeekdayKey } from '../../utils/date';
+
+type SessionEntry = {
+  id: string;
+  mantra: string;
+  count: number;
+  target: number;
+  mood?: string;
+  completedAt: string;
+};
 
 export const HomeScreen: React.FC = () => {
   const { colors } = useTheme();
@@ -18,10 +28,16 @@ export const HomeScreen: React.FC = () => {
   const [mantraName, setMantraName] = useState('');
   const [count, setCount] = useState(0);
   const [target, setTarget] = useState(108);
+  const [defaultTarget, setDefaultTarget] = useState(108);
   const [sessionActive, setSessionActive] = useState(false);
   const [lastCompletedMantra, setLastCompletedMantra] = useState('');
   const [lastCompletedAt, setLastCompletedAt] = useState('');
   const [error, setError] = useState('');
+  const [streaks, setStreaks] = useState({ current: 0, longest: 0 });
+  const [history, setHistory] = useState<SessionEntry[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const [reminderEnabled, setReminderEnabled] = useState(false);
+  const [reminderTimeLabel, setReminderTimeLabel] = useState('');
   const completedDate =
     lastCompletedAt && !Number.isNaN(new Date(lastCompletedAt).getTime())
       ? new Date(lastCompletedAt).toDateString()
@@ -35,6 +51,12 @@ export const HomeScreen: React.FC = () => {
       mantraRaw,
       completedRaw,
       completedAtRaw,
+      countsRaw,
+      historyRaw,
+      favoritesRaw,
+      dailyGoalsRaw,
+      reminderEnabledRaw,
+      reminderTimeRaw,
     ] = await Promise.all([
       AsyncStorage.getItem(STORAGE_KEYS.count),
       AsyncStorage.getItem(STORAGE_KEYS.target),
@@ -42,14 +64,46 @@ export const HomeScreen: React.FC = () => {
       AsyncStorage.getItem(STORAGE_KEYS.activeMantra),
       AsyncStorage.getItem(STORAGE_KEYS.lastCompletedMantra),
       AsyncStorage.getItem(STORAGE_KEYS.lastCompletedAt),
+      AsyncStorage.getItem(STORAGE_KEYS.dailyCounts),
+      AsyncStorage.getItem(STORAGE_KEYS.sessionHistory),
+      AsyncStorage.getItem(STORAGE_KEYS.favoriteMantras),
+      AsyncStorage.getItem(STORAGE_KEYS.dailyGoals),
+      AsyncStorage.getItem(STORAGE_KEYS.reminderEnabled),
+      AsyncStorage.getItem(STORAGE_KEYS.reminderTime),
     ]);
 
+    const baseTarget = targetRaw ? Number(targetRaw) || 108 : 108;
+    const goals = dailyGoalsRaw
+      ? (JSON.parse(dailyGoalsRaw) as Record<number, number>)
+      : {};
+    const todayTarget = goals[getWeekdayKey()] || baseTarget;
+
     setCount(countRaw ? Number(countRaw) || 0 : 0);
-    setTarget(targetRaw ? Number(targetRaw) || 108 : 108);
+    setDefaultTarget(baseTarget);
+    setTarget(todayTarget);
     setSessionActive(activeRaw === 'true');
     setMantraName(mantraRaw || '');
     setLastCompletedMantra(completedRaw || '');
     setLastCompletedAt(completedAtRaw || '');
+    const counts = countsRaw
+      ? (JSON.parse(countsRaw) as Record<string, number>)
+      : {};
+    setStreaks(getStreaks(counts));
+    setHistory(historyRaw ? (JSON.parse(historyRaw) as SessionEntry[]) : []);
+    setFavorites(
+      favoritesRaw ? (JSON.parse(favoritesRaw) as string[]) : [],
+    );
+    setReminderEnabled(reminderEnabledRaw === 'true');
+    if (reminderTimeRaw) {
+      const [h, m] = reminderTimeRaw.split(':').map(Number);
+      const date = new Date();
+      date.setHours(h || 8, m || 0, 0, 0);
+      setReminderTimeLabel(
+        date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+      );
+    } else {
+      setReminderTimeLabel('');
+    }
   }, []);
 
   useFocusEffect(
@@ -75,7 +129,10 @@ export const HomeScreen: React.FC = () => {
     await Promise.all([
       AsyncStorage.setItem(STORAGE_KEYS.activeMantra, trimmed),
       AsyncStorage.setItem(STORAGE_KEYS.count, '0'),
-      AsyncStorage.setItem(STORAGE_KEYS.target, String(target || 108)),
+      AsyncStorage.setItem(
+        STORAGE_KEYS.target,
+        String(defaultTarget || 108),
+      ),
       AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'true'),
     ]);
 
@@ -89,6 +146,7 @@ export const HomeScreen: React.FC = () => {
   }, [stackNavigation]);
 
   const progress = target > 0 ? Math.min(count / target, 1) : 0;
+  const isFavorite = favorites.includes(activeMantra);
 
   return (
     <Screen>
@@ -115,6 +173,20 @@ export const HomeScreen: React.FC = () => {
               Calm, focused chanting
             </Text>
           </View>
+          <Pressable
+            onPress={() => stackNavigation.navigate('Goals')}
+            style={[
+              styles.goalIcon,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Icon
+              iconSet="MaterialIcons"
+              iconName="flag"
+              size={18}
+              color={colors.primary}
+            />
+          </Pressable>
           {sessionActive ? (
             <View
               style={[
@@ -186,6 +258,64 @@ export const HomeScreen: React.FC = () => {
           <Text variant="xs" color="textSecondary">
             Remaining {Math.max(target - count, 0)}
           </Text>
+        </View>
+
+        <Pressable
+          onPress={() => stackNavigation.navigate('Goals')}
+          style={[
+            styles.goalsCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <View style={styles.goalsLeft}>
+            <View
+              style={[
+                styles.goalsBadge,
+                { backgroundColor: colors.primary },
+              ]}
+            >
+              <Icon iconSet="MaterialIcons" iconName="flag" size={16} color={colors.surface} />
+            </View>
+            <View style={styles.goalsText}>
+              <Text weight="semibold">Goals & reminders</Text>
+              <Text variant="xs" color="textSecondary">
+                Today goal {target}
+                {reminderEnabled && reminderTimeLabel
+                  ? ` · Reminder ${reminderTimeLabel}`
+                  : ''}
+              </Text>
+            </View>
+          </View>
+          <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
+        </Pressable>
+
+        <View style={styles.streakRow}>
+          <View
+            style={[
+              styles.streakCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Text variant="xs" color="textSecondary">
+              Current streak
+            </Text>
+            <Text variant="lg" weight="bold">
+              {streaks.current} days
+            </Text>
+          </View>
+          <View
+            style={[
+              styles.streakCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Text variant="xs" color="textSecondary">
+              Best streak
+            </Text>
+            <Text variant="lg" weight="bold">
+              {streaks.longest} days
+            </Text>
+          </View>
         </View>
 
         {sessionActive && count < target ? (
@@ -294,6 +424,24 @@ export const HomeScreen: React.FC = () => {
               </View>
             </View>
             <View style={styles.selectAction}>
+              {isFavorite ? (
+                <View
+                  style={[
+                    styles.favoritePill,
+                    { backgroundColor: colors.primary },
+                  ]}
+                >
+                  <Icon
+                    iconSet="MaterialIcons"
+                    iconName="star"
+                    size={12}
+                    color={colors.surface}
+                  />
+                  <Text variant="xs" color="surface">
+                    Favorite
+                  </Text>
+                </View>
+              ) : null}
               <Icon
                 iconSet="MaterialIcons"
                 iconName="chevron-right"
@@ -308,6 +456,56 @@ export const HomeScreen: React.FC = () => {
             </Text>
           ) : null}
         </View>
+
+        <View style={styles.sectionHeader}>
+          <Text variant="sm" weight="semibold">
+            Recent sessions
+          </Text>
+          <Pressable onPress={() => stackNavigation.navigate('History')}>
+            <Text variant="xs" color="textSecondary">
+              View all
+            </Text>
+          </Pressable>
+        </View>
+        {history.length === 0 ? (
+          <View
+            style={[
+              styles.emptyHistory,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Text variant="sm" color="textSecondary">
+              Complete your first 108 to see history here.
+            </Text>
+          </View>
+        ) : (
+          history.slice(0, 2).map(item => {
+            const date = new Date(item.completedAt).toDateString();
+            return (
+              <View
+                key={item.id}
+                style={[
+                  styles.historyCard,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <View style={styles.historyRow}>
+                  <Text weight="semibold">{item.mantra}</Text>
+                  <Text variant="xs" color="textSecondary">
+                    {date}
+                  </Text>
+                </View>
+                <Text variant="xs" color="textSecondary">
+                  {item.count}/{item.target}
+                  {item.mood ? ` · ${item.mood}` : ''}
+                </Text>
+              </View>
+            );
+          })
+        )}
 
         <View style={styles.actions}>
           <Button
@@ -356,6 +554,14 @@ const styles = StyleSheet.create({
     gap: 4,
     flex: 1,
   },
+  goalIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -391,6 +597,30 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 999,
   },
+  goalsCard: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  goalsLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  goalsBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  goalsText: {
+    gap: 4,
+  },
   bannerCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -407,6 +637,18 @@ const styles = StyleSheet.create({
   bannerButton: {
     minHeight: 36,
     paddingHorizontal: 10,
+  },
+  streakRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 12,
+  },
+  streakCard: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 14,
+    gap: 6,
   },
   actions: {
     marginTop: 24,
@@ -466,6 +708,33 @@ const styles = StyleSheet.create({
   selectAction: {
     alignItems: 'flex-end',
     gap: 2,
+  },
+  favoritePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    marginBottom: 4,
+  },
+  historyCard: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    gap: 6,
+    marginTop: 10,
+  },
+  historyRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  emptyHistory: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 10,
   },
   chipRow: {
     flexDirection: 'row',

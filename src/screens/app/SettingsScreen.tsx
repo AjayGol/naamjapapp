@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Switch, Pressable, ScrollView } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Switch,
+  Pressable,
+  ScrollView,
+} from 'react-native';
 import { Screen, Text, Divider, Icon } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
@@ -14,7 +20,6 @@ export const SettingsScreen: React.FC = () => {
   const mode = useAppSelector(state => state.settings.themeMode);
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
-  const [soundEnabled, setSoundEnabled] = useState(true);
 
   return (
     <Screen>
@@ -67,23 +72,28 @@ export const SettingsScreen: React.FC = () => {
         </View>
 
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <View style={styles.rowItem}>
+          <Pressable style={styles.rowItem} onPress={() => navigation.navigate('Goals')}>
             <View style={styles.rowLeft}>
-              <Icon iconSet="MaterialIcons" iconName="volume-up" size={20} color={colors.textSecondary} />
-              <Text>Sound On Mala</Text>
+              <Icon iconSet="MaterialIcons" iconName="flag" size={20} color={colors.textSecondary} />
+              <Text>Goals & Reminders</Text>
             </View>
-            <Switch
-              value={soundEnabled}
-              onValueChange={setSoundEnabled}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={colors.surface}
-            />
-          </View>
-          <Divider />
+            <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
+          </Pressable>
+        </View>
+
+        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Pressable style={styles.rowItem} onPress={() => navigation.navigate('SelectNaam')}>
             <View style={styles.rowLeft}>
               <Icon iconSet="MaterialIcons" iconName="spa" size={20} color={colors.textSecondary} />
               <Text>Select Naam</Text>
+            </View>
+            <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
+          </Pressable>
+          <Divider />
+          <Pressable style={styles.rowItem} onPress={() => navigation.navigate('History')}>
+            <View style={styles.rowLeft}>
+              <Icon iconSet="MaterialIcons" iconName="timeline" size={20} color={colors.textSecondary} />
+              <Text>Session History</Text>
             </View>
             <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
           </Pressable>
@@ -209,6 +219,7 @@ export const SettingsScreen: React.FC = () => {
           </Text>
         </View>
       </ScrollView>
+
     </Screen>
   );
 };

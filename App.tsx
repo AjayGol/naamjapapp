@@ -10,6 +10,7 @@ import { RootNavigator } from './src/navigation';
 import { useTheme } from './src/hooks/useTheme';
 import { useAppDispatch } from './src/hooks/redux';
 import { hydrateSettings } from './src/store/settingsSlice';
+import { configureNotifications } from './src/services/notifications';
 
 enableScreens();
 
@@ -19,6 +20,7 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     dispatch(hydrateSettings());
+    configureNotifications();
   }, [dispatch]);
 
   return (

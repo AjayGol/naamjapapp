@@ -14,6 +14,8 @@ export type AppTabParamList = {
 export type AppStackParamList = {
   Tabs: NavigatorScreenParams<AppTabParamList>;
   SelectNaam: undefined;
+  History: undefined;
+  Goals: undefined;
 };
 
 export type RootStackParamList = {

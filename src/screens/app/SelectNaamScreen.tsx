@@ -35,15 +35,18 @@ export const SelectNaamScreen: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [newNaam, setNewNaam] = useState('');
   const [error, setError] = useState('');
+  const [favorites, setFavorites] = useState<string[]>([]);
 
   const load = useCallback(async () => {
-    const [listRaw, activeRaw] = await Promise.all([
+    const [listRaw, activeRaw, favoritesRaw] = await Promise.all([
       AsyncStorage.getItem(STORAGE_KEYS.mantraList),
       AsyncStorage.getItem(STORAGE_KEYS.activeMantra),
+      AsyncStorage.getItem(STORAGE_KEYS.favoriteMantras),
     ]);
     const list = listRaw ? (JSON.parse(listRaw) as string[]) : DEFAULT_MANTRAS;
     setItems(list);
     setSelected(activeRaw || list[0] || '');
+    setFavorites(favoritesRaw ? (JSON.parse(favoritesRaw) as string[]) : []);
   }, []);
 
   useEffect(() => {
@@ -52,6 +55,13 @@ export const SelectNaamScreen: React.FC = () => {
 
   const persistList = useCallback(async (list: string[]) => {
     await AsyncStorage.setItem(STORAGE_KEYS.mantraList, JSON.stringify(list));
+  }, []);
+
+  const persistFavorites = useCallback(async (list: string[]) => {
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.favoriteMantras,
+      JSON.stringify(list),
+    );
   }, []);
 
   const selectItem = useCallback(
@@ -91,9 +101,24 @@ export const SelectNaamScreen: React.FC = () => {
     navigation.goBack();
   }, [items, navigation, newNaam, persistList]);
 
+  const toggleFavorite = useCallback(
+    (value: string) => {
+      setFavorites(prev => {
+        const exists = prev.includes(value);
+        const next = exists
+          ? prev.filter(item => item !== value)
+          : [value, ...prev];
+        void persistFavorites(next);
+        return next;
+      });
+    },
+    [persistFavorites],
+  );
+
   const renderItem = useCallback(
     ({ item }: { item: string }) => {
       const active = item === selected;
+      const isFavorite = favorites.includes(item);
       return (
         <Pressable
           onPress={() => selectItem(item)}
@@ -106,6 +131,7 @@ export const SelectNaamScreen: React.FC = () => {
           ]}
         >
           <View style={styles.cardRow}>
+            <View style={styles.cardLeft}>
             <Text
               weight="semibold"
               color="textPrimary"
@@ -113,21 +139,39 @@ export const SelectNaamScreen: React.FC = () => {
             >
               {item}
             </Text>
-            {active ? (
-              <Icon
-                iconSet="MaterialIcons"
-                iconName="check-circle"
-                size={20}
-                color={colors.surface}
-              />
-            ) : (
-              <Icon
-                iconSet="MaterialIcons"
-                iconName="chevron-right"
-                size={20}
-                color={colors.textSecondary}
-              />
-            )}
+            </View>
+            <View style={styles.cardActions}>
+              <Pressable
+                onPress={event => {
+                  event.stopPropagation?.();
+                  toggleFavorite(item);
+                }}
+                hitSlop={8}
+                style={styles.favoriteBtn}
+              >
+                <Icon
+                  iconSet="MaterialIcons"
+                  iconName={isFavorite ? 'star' : 'star-border'}
+                  size={20}
+                  color={isFavorite ? colors.accent : colors.textSecondary}
+                />
+              </Pressable>
+              {active ? (
+                <Icon
+                  iconSet="MaterialIcons"
+                  iconName="check-circle"
+                  size={20}
+                  color={colors.surface}
+                />
+              ) : (
+                <Icon
+                  iconSet="MaterialIcons"
+                  iconName="chevron-right"
+                  size={20}
+                  color={colors.textSecondary}
+                />
+              )}
+            </View>
           </View>
         </Pressable>
       );
@@ -135,20 +179,31 @@ export const SelectNaamScreen: React.FC = () => {
     [
       colors.border,
       colors.primary,
+      colors.accent,
       colors.surface,
       colors.textSecondary,
+      favorites,
       selectItem,
       selected,
+      toggleFavorite,
     ],
   );
 
   const keyExtractor = useCallback((item: string) => item, []);
 
+  const sortedItems = useMemo(() => {
+    const unique = Array.from(new Set(items));
+    const favSet = new Set(favorites);
+    const favs = unique.filter(item => favSet.has(item));
+    const rest = unique.filter(item => !favSet.has(item));
+    return [...favs, ...rest];
+  }, [favorites, items]);
+
   const filteredItems = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter(item => item.toLowerCase().includes(q));
-  }, [items, query]);
+    if (!q) return sortedItems;
+    return sortedItems.filter(item => item.toLowerCase().includes(q));
+  }, [query, sortedItems]);
 
   const listHeader = useMemo(
     () => (
@@ -287,6 +342,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  cardLeft: {
+    flex: 1,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  favoriteBtn: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchBox: {
     borderRadius: 18,
