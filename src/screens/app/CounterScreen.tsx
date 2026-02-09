@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Pressable, Vibration, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Screen, Text, Button, Divider, Icon, AppHeader } from '../../components';
+import { Screen, Text, Divider, Icon, AppHeader } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
 import { STORAGE_KEYS } from '../../utils/storageKeys';
 import { getLocalDateKey } from '../../utils/date';
@@ -20,7 +20,7 @@ export const CounterScreen: React.FC = () => {
   const [toastVisible, setToastVisible] = useState(false);
   const [malaCount, setMalaCount] = useState(0);
   const [showTapHint, setShowTapHint] = useState(true);
-  const toastTimer = useRef<NodeJS.Timeout | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progress = target > 0 ? Math.min(count / target, 1) : 0;
   const ringSize = 230;
   const ringStroke = 14;
@@ -95,10 +95,12 @@ export const CounterScreen: React.FC = () => {
         Animated.timing(countScale, { toValue: 1.08, duration: 120, useNativeDriver: true }),
         Animated.timing(countScale, { toValue: 1, duration: 120, useNativeDriver: true }),
       ]).start();
-      if (showTapHint) {
-        setShowTapHint(false);
-        AsyncStorage.setItem(STORAGE_KEYS.tapHintSeen, 'true');
-      }
+      setShowTapHint(prev => {
+        if (prev) {
+          AsyncStorage.setItem(STORAGE_KEYS.tapHintSeen, 'true');
+        }
+        return false;
+      });
       if (next >= target) {
         setSessionActive(false);
         AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false');
@@ -127,14 +129,7 @@ export const CounterScreen: React.FC = () => {
       }
       return next;
     });
-  }, [mantraName, target]);
-
-  const reset = useCallback(() => {
-    setCount(0);
-    setSessionActive(false);
-    setToastVisible(false);
-    AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false');
-  }, []);
+  }, [countScale, mantraName, target]);
 
   return (
     <Screen>

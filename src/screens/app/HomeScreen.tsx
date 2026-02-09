@@ -58,6 +58,12 @@ export const HomeScreen: React.FC = () => {
     }, [loadState]),
   );
 
+  const continueChanting = useCallback(() => {
+    navigation.navigate('Counter');
+  }, [navigation]);
+
+  const activeMantra = useMemo(() => mantraName.trim(), [mantraName]);
+
   const startChanting = useCallback(async () => {
     const trimmed = activeMantra.trim();
     if (!trimmed) {
@@ -77,12 +83,6 @@ export const HomeScreen: React.FC = () => {
     setSessionActive(true);
     navigation.navigate('Counter');
   }, [activeMantra, navigation, target]);
-
-  const continueChanting = useCallback(() => {
-    navigation.navigate('Counter');
-  }, [navigation]);
-
-  const activeMantra = useMemo(() => mantraName.trim(), [mantraName]);
 
   const openSelectNaam = useCallback(() => {
     stackNavigation.navigate('SelectNaam');

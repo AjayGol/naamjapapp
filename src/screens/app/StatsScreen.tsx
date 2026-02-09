@@ -155,7 +155,8 @@ export const StatsScreen: React.FC = () => {
               <Text
                 variant="sm"
                 weight="semibold"
-                color={active ? 'surface' : 'textSecondary'}
+                color="textSecondary"
+                style={active ? { color: colors.surface } : undefined}
               >
                 {item.charAt(0).toUpperCase() + item.slice(1)}
               </Text>

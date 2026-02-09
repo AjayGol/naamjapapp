@@ -18,15 +18,15 @@ export const SettingsScreen: React.FC = () => {
 
   return (
     <Screen>
+      <View style={styles.header}>
+        <Text variant="title" weight="bold">
+          Settings
+        </Text>
+        <Text variant="sm" color="textSecondary">
+          Calm, focused preferences
+        </Text>
+      </View>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text variant="title" weight="bold">
-            Settings
-          </Text>
-          <Text variant="sm" color="textSecondary">
-            Calm, focused preferences
-          </Text>
-        </View>
 
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.rowItem}>
@@ -36,7 +36,9 @@ export const SettingsScreen: React.FC = () => {
             </View>
             <Switch
               value={mode === 'light'}
-              onValueChange={value => dispatch(persistThemeMode(value ? 'light' : 'dark'))}
+              onValueChange={value => {
+                void dispatch(persistThemeMode(value ? 'light' : 'dark'));
+              }}
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor={colors.surface}
             />
@@ -219,6 +221,7 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'flex-start',
     gap: 6,
+    paddingBottom : 10
   },
   sectionCard: {
     borderWidth: 1,

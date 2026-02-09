@@ -106,7 +106,11 @@ export const SelectNaamScreen: React.FC = () => {
           ]}
         >
           <View style={styles.cardRow}>
-            <Text weight="semibold" color={active ? 'surface' : 'textPrimary'}>
+            <Text
+              weight="semibold"
+              color="textPrimary"
+              style={active ? { color: colors.surface } : undefined}
+            >
               {item}
             </Text>
             {active ? (
@@ -128,7 +132,14 @@ export const SelectNaamScreen: React.FC = () => {
         </Pressable>
       );
     },
-    [colors.border, colors.primary, colors.surface, selectItem, selected],
+    [
+      colors.border,
+      colors.primary,
+      colors.surface,
+      colors.textSecondary,
+      selectItem,
+      selected,
+    ],
   );
 
   const keyExtractor = useCallback((item: string) => item, []);
@@ -303,11 +314,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#00000008',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  cardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   clearBtn: {
     width: 26,
