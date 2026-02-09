@@ -13,6 +13,7 @@ export type AppTabParamList = {
 
 export type AppStackParamList = {
   Tabs: NavigatorScreenParams<AppTabParamList>;
+  SelectNaam: undefined;
 };
 
 export type RootStackParamList = {

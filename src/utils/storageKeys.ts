@@ -8,4 +8,5 @@ export const STORAGE_KEYS = {
   lastCompletedMantra: 'naamjap.lastCompletedMantra',
   lastCompletedAt: 'naamjap.lastCompletedAt',
   dailyCounts: 'naamjap.dailyCounts',
+  mantraList: 'naamjap.mantraList',
 };

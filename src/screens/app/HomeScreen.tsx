@@ -1,27 +1,21 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { Screen, Text, Button, Divider, Icon, TextInput } from '../../components';
+import { Screen, Text, Button, Divider, Icon } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../../utils/storageKeys';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { AppTabParamList } from '../../navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AppStackParamList } from '../../navigation/types';
 
-const MANTRA_PRESETS = [
-  'Radha Radha',
-  'Ram Ram',
-  'Om Namah Shivaya',
-  'Waheguru',
-  'Hare Krishna',
-  'Om',
-];
 
 export const HomeScreen: React.FC = () => {
   const { colors } = useTheme();
   const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList>>();
+  const stackNavigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [mantraName, setMantraName] = useState('');
-  const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
   const [count, setCount] = useState(0);
   const [target, setTarget] = useState(108);
   const [sessionActive, setSessionActive] = useState(false);
@@ -54,7 +48,6 @@ export const HomeScreen: React.FC = () => {
     setTarget(targetRaw ? Number(targetRaw) || 108 : 108);
     setSessionActive(activeRaw === 'true');
     setMantraName(mantraRaw || '');
-    setSelectedPreset(mantraRaw && MANTRA_PRESETS.includes(mantraRaw) ? mantraRaw : null);
     setLastCompletedMantra(completedRaw || '');
     setLastCompletedAt(completedAtRaw || '');
   }, []);
@@ -66,7 +59,7 @@ export const HomeScreen: React.FC = () => {
   );
 
   const startChanting = useCallback(async () => {
-    const trimmed = mantraName.trim();
+    const trimmed = activeMantra.trim();
     if (!trimmed) {
       setError('Please enter a mantra name');
       return;
@@ -83,17 +76,17 @@ export const HomeScreen: React.FC = () => {
     setCount(0);
     setSessionActive(true);
     navigation.navigate('Counter');
-  }, [mantraName, navigation, target]);
+  }, [activeMantra, navigation, target]);
 
   const continueChanting = useCallback(() => {
     navigation.navigate('Counter');
   }, [navigation]);
 
-  const activeMantra = useMemo(() => {
-    if (mantraName.trim()) return mantraName.trim();
-    if (selectedPreset) return selectedPreset;
-    return '';
-  }, [mantraName, selectedPreset]);
+  const activeMantra = useMemo(() => mantraName.trim(), [mantraName]);
+
+  const openSelectNaam = useCallback(() => {
+    stackNavigation.navigate('SelectNaam');
+  }, [stackNavigation]);
 
   const progress = target > 0 ? Math.min(count / target, 1) : 0;
 
@@ -181,55 +174,41 @@ export const HomeScreen: React.FC = () => {
         ) : null}
 
         <View style={styles.form}>
-          <Text variant="sm" weight="semibold" style={styles.sectionTitle}>
-            Choose mantra
-          </Text>
-          <View style={styles.chipRow}>
-            {MANTRA_PRESETS.map(item => {
-              const active = selectedPreset === item;
-              return (
-                <Pressable
-                  key={item}
-                  onPress={() => {
-                    setSelectedPreset(item);
-                    setMantraName(item);
-                    if (error) setError('');
-                  }}
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor: active ? colors.primary : colors.surface,
-                      borderColor: active ? colors.primary : colors.border,
-                    },
-                  ]}
-                >
-                  <Text variant="sm" color={active ? 'surface' : 'textSecondary'}>
-                    {item}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <View style={styles.orRow}>
-            <Divider style={[styles.orLine, { backgroundColor: colors.border }]} />
-            <Text variant="xs" color="textSecondary">
-              OR
+          <View style={styles.sectionHeader}>
+            <Text variant="sm" weight="semibold">
+              Choose mantra
             </Text>
-            <Divider style={[styles.orLine, { backgroundColor: colors.border }]} />
+            <Text variant="xs" color="textSecondary">
+              Tap to change
+            </Text>
           </View>
-
-          <TextInput
-            label="Custom mantra"
-            placeholder="Type your own mantra"
-            value={mantraName}
-            onChangeText={text => {
-              setMantraName(text);
-              setSelectedPreset(MANTRA_PRESETS.includes(text) ? text : null);
-              if (error) setError('');
-            }}
-            error={error}
-          />
+          <Pressable
+            onPress={openSelectNaam}
+            style={[styles.selectRow, { borderColor: colors.border, backgroundColor: colors.surface }]}
+          >
+            <View style={styles.selectLeft}>
+              <View style={[styles.selectIcon, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                <Icon iconSet="MaterialIcons" iconName="spa" size={18} color={colors.primary} />
+              </View>
+              <View style={styles.selectText}>
+                <Text weight="semibold">{activeMantra || 'Select Naam'}</Text>
+                <Text variant="xs" color="textSecondary">
+                  {activeMantra ? 'Current selection' : 'Pick a name to begin'}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.selectRight}>
+              <Text variant="xs" color="textSecondary">
+                Change
+              </Text>
+              <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
+            </View>
+          </Pressable>
+          {error ? (
+            <Text variant="xs" color="error">
+              {error}
+            </Text>
+          ) : null}
         </View>
 
         <View style={styles.actions}>
@@ -339,8 +318,37 @@ const styles = StyleSheet.create({
     marginTop: 18,
     gap: 12,
   },
-  sectionTitle: {
-    marginBottom: 4,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+  },
+  selectRow: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 14,
+  },
+  selectLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  selectRight: {
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  selectIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectText: {
+    flex: 1,
+    gap: 2,
   },
   chipRow: {
     flexDirection: 'row',
