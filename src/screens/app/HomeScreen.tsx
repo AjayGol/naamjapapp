@@ -1,10 +1,9 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { Screen, Text, Button, Divider, Icon, TextInput } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from '../../utils/storageKeys';
-import { getLocalDateKey } from '../../utils/date';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { AppTabParamList } from '../../navigation';
@@ -23,7 +22,6 @@ export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList>>();
   const [mantraName, setMantraName] = useState('');
   const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [count, setCount] = useState(0);
   const [target, setTarget] = useState(108);
   const [sessionActive, setSessionActive] = useState(false);
@@ -91,91 +89,87 @@ export const HomeScreen: React.FC = () => {
     navigation.navigate('Counter');
   }, [navigation]);
 
-  const add108 = useCallback(() => {
-    setCount(prev => {
-      const next = prev + 108;
-      AsyncStorage.setItem(STORAGE_KEYS.count, String(next));
-      const todayKey = getLocalDateKey();
-      AsyncStorage.getItem(STORAGE_KEYS.dailyCounts).then(raw => {
-        const data = raw ? (JSON.parse(raw) as Record<string, number>) : {};
-        data[todayKey] = (data[todayKey] || 0) + 108;
-        AsyncStorage.setItem(STORAGE_KEYS.dailyCounts, JSON.stringify(data));
-      });
-      return next;
-    });
-  }, []);
-
   const activeMantra = useMemo(() => {
     if (mantraName.trim()) return mantraName.trim();
     if (selectedPreset) return selectedPreset;
     return '';
   }, [mantraName, selectedPreset]);
 
+  const progress = target > 0 ? Math.min(count / target, 1) : 0;
+
   return (
     <Screen>
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={[styles.iconBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Icon iconSet="MaterialIcons" iconName="self-improvement" size={22} color={colors.primary} />
-          </View>
-          <View style={styles.headerText}>
-            <Text variant="title" weight="bold">
-              Naam Jap
-            </Text>
-            <Text variant="sm" color="textSecondary">
-              Calm, focused chanting
-            </Text>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <View style={styles.headerRow}>
+            <View style={[styles.iconBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Icon iconSet="MaterialIcons" iconName="self-improvement" size={22} color={colors.primary} />
+            </View>
+            <View style={styles.headerText}>
+              <Text variant="title" weight="bold">
+                Naam Jap
+              </Text>
+              <Text variant="sm" color="textSecondary">
+                Calm, focused chanting
+              </Text>
+            </View>
+            {sessionActive ? (
+              <View style={[styles.statusPill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Icon iconSet="MaterialIcons" iconName="radio-button-checked" size={14} color={colors.secondary} />
+                <Text variant="xs" color="textSecondary">
+                  Active
+                </Text>
+              </View>
+            ) : null}
           </View>
         </View>
-      </View>
 
-      <Divider style={styles.divider} />
+        <Divider style={styles.divider} />
 
-      <View style={[styles.statsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <View style={styles.statsRow}>
-          <View>
-            <Text variant="sm" color="textSecondary">
-              Today
-            </Text>
-            <Text variant="xl" weight="bold" color="primary">
-              {count}
-            </Text>
+        <View style={[styles.progressCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <View style={styles.progressHeader}>
+            <View>
+              <Text variant="sm" color="textSecondary">
+                Today
+              </Text>
+              <Text variant="xl" weight="bold" color="primary">
+                {count}
+              </Text>
+            </View>
+            <View style={styles.targetBox}>
+              <Text variant="xs" color="textSecondary">
+                Target
+              </Text>
+              <Text variant="lg" weight="semibold">
+                {target}
+              </Text>
+            </View>
           </View>
-          <View>
-            <Text variant="sm" color="textSecondary">
-              Target
-            </Text>
-            <Text variant="lg" weight="semibold">
-              {target}
-            </Text>
+          <View style={[styles.progressTrack, { backgroundColor: colors.border }]}>
+            <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%`, backgroundColor: colors.accent }]} />
           </View>
-          <View>
-            <Text variant="sm" color="textSecondary">
-              Remaining
-            </Text>
-            <Text variant="lg" weight="semibold" color="accent">
-              {Math.max(target - count, 0)}
-            </Text>
-          </View>
+          <Text variant="xs" color="textSecondary">
+            Remaining {Math.max(target - count, 0)}
+          </Text>
         </View>
 
         {sessionActive && count < target ? (
-          <View style={[styles.inlineBanner, { backgroundColor: colors.background, borderColor: colors.border }]}>
+          <View style={[styles.bannerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Icon iconSet="MaterialIcons" iconName="pending-actions" size={18} color={colors.secondary} />
-            <View style={styles.inlineBannerText}>
-              <Text weight="semibold">Pending session</Text>
+            <View style={styles.bannerText}>
+              <Text weight="semibold">Continue your session</Text>
               <Text variant="sm" color="textSecondary">
-                Continue {activeMantra || 'your mantra'} to reach {target}.
+                {activeMantra || 'Your mantra'} · {target - count} left
               </Text>
             </View>
-            <Button label="Continue" onPress={continueChanting} style={styles.inlineBannerButton} />
+            <Button label="Continue" onPress={continueChanting} style={styles.bannerButton} />
           </View>
         ) : null}
 
         {!sessionActive && lastCompletedMantra ? (
-          <View style={[styles.inlineBanner, { backgroundColor: colors.background, borderColor: colors.border }]}>
+          <View style={[styles.bannerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Icon iconSet="MaterialIcons" iconName="verified" size={18} color={colors.accent} />
-            <View style={styles.inlineBannerText}>
+            <View style={styles.bannerText}>
               <Text weight="semibold" color="accent">
                 Completed 108
               </Text>
@@ -185,85 +179,86 @@ export const HomeScreen: React.FC = () => {
             </View>
           </View>
         ) : null}
-      </View>
 
-      <View style={styles.form}>
-        <Text variant="sm" weight="semibold" style={styles.sectionTitle}>
-          Choose mantra
-        </Text>
-        <Pressable
-          onPress={() => setDropdownOpen(prev => !prev)}
-          style={[styles.dropdown, { borderColor: colors.border, backgroundColor: colors.surface }]}
-        >
-          <Text>
-            {selectedPreset || 'Select from list'}
+        <View style={styles.form}>
+          <Text variant="sm" weight="semibold" style={styles.sectionTitle}>
+            Choose mantra
           </Text>
-          <Icon iconSet="MaterialIcons" iconName={dropdownOpen ? 'expand-less' : 'expand-more'} size={22} color={colors.textSecondary} />
-        </Pressable>
-        {dropdownOpen ? (
-          <View style={[styles.dropdownList, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-            {MANTRA_PRESETS.map(item => (
-              <Pressable
-                key={item}
-                onPress={() => {
-                  setSelectedPreset(item);
-                  setMantraName(item);
-                  setDropdownOpen(false);
-                  if (error) setError('');
-                }}
-                style={styles.dropdownItem}
-              >
-                <Text>{item}</Text>
-              </Pressable>
-            ))}
+          <View style={styles.chipRow}>
+            {MANTRA_PRESETS.map(item => {
+              const active = selectedPreset === item;
+              return (
+                <Pressable
+                  key={item}
+                  onPress={() => {
+                    setSelectedPreset(item);
+                    setMantraName(item);
+                    if (error) setError('');
+                  }}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: active ? colors.primary : colors.surface,
+                      borderColor: active ? colors.primary : colors.border,
+                    },
+                  ]}
+                >
+                  <Text variant="sm" color={active ? 'surface' : 'textSecondary'}>
+                    {item}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
-        ) : null}
 
-        <View style={styles.orRow}>
-          <Divider style={[styles.orLine, { backgroundColor: colors.border }]} />
-          <Text variant="xs" color="textSecondary">
-            OR
-          </Text>
-          <Divider style={[styles.orLine, { backgroundColor: colors.border }]} />
+          <View style={styles.orRow}>
+            <Divider style={[styles.orLine, { backgroundColor: colors.border }]} />
+            <Text variant="xs" color="textSecondary">
+              OR
+            </Text>
+            <Divider style={[styles.orLine, { backgroundColor: colors.border }]} />
+          </View>
+
+          <TextInput
+            label="Custom mantra"
+            placeholder="Type your own mantra"
+            value={mantraName}
+            onChangeText={text => {
+              setMantraName(text);
+              setSelectedPreset(MANTRA_PRESETS.includes(text) ? text : null);
+              if (error) setError('');
+            }}
+            error={error}
+          />
         </View>
 
-        <TextInput
-          label="Custom mantra"
-          placeholder="Type your own mantra"
-          value={mantraName}
-          onChangeText={text => {
-            setMantraName(text);
-            setSelectedPreset(MANTRA_PRESETS.includes(text) ? text : null);
-            if (error) setError('');
-          }}
-          error={error}
-        />
-      </View>
-
-      <View style={styles.actions}>
-        <Button
-          label={sessionActive ? 'Continue Chanting' : 'Start Chanting'}
-          onPress={sessionActive ? continueChanting : startChanting}
-        />
-        <Button label="Add 108" variant="secondary" onPress={add108} />
-        <Button
-          label="Reset"
-          variant="outline"
-          onPress={async () => {
-            setCount(0);
-            setSessionActive(false);
-            await Promise.all([
-              AsyncStorage.setItem(STORAGE_KEYS.count, '0'),
-              AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false'),
-            ]);
-          }}
-        />
-      </View>
+        <View style={styles.actions}>
+          <Button
+            label={sessionActive ? 'Continue Chanting' : 'Start Chanting'}
+            onPress={sessionActive ? continueChanting : startChanting}
+          />
+          <Button
+            label="Reset"
+            variant="outline"
+            onPress={async () => {
+              setCount(0);
+              setSessionActive(false);
+              await Promise.all([
+                AsyncStorage.setItem(STORAGE_KEYS.count, '0'),
+                AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false'),
+              ]);
+            }}
+          />
+        </View>
+      </ScrollView>
     </Screen>
   );
 };
 
 const styles = StyleSheet.create({
+  content: {
+    paddingBottom: 24,
+  },
   header: {
     gap: 10,
   },
@@ -282,38 +277,59 @@ const styles = StyleSheet.create({
   },
   headerText: {
     gap: 4,
+    flex: 1,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   divider: {
-    marginVertical: 20,
+    marginVertical: 16,
   },
-  statsCard: {
-    borderRadius: 16,
+  progressCard: {
+    borderRadius: 18,
     padding: 18,
     borderWidth: 1,
-    gap: 14,
+    gap: 12,
   },
-  statsRow: {
+  progressHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  inlineBanner: {
+  targetBox: {
+    alignItems: 'flex-end',
+  },
+  progressTrack: {
+    height: 10,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 999,
+  },
+  bannerCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     borderWidth: 1,
     borderRadius: 12,
     padding: 12,
+    marginTop: 12,
   },
-  inlineBannerText: {
+  bannerText: {
     flex: 1,
     gap: 2,
   },
-  inlineBannerButton: {
+  bannerButton: {
     minHeight: 36,
     paddingHorizontal: 10,
-  },
-  count: {
-    marginTop: 4,
   },
   actions: {
     marginTop: 24,
@@ -326,23 +342,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     marginBottom: 4,
   },
-  dropdown: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+  chipRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: 8,
   },
-  dropdownList: {
+  chip: {
     borderWidth: 1,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  dropdownItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
   orRow: {
     flexDirection: 'row',

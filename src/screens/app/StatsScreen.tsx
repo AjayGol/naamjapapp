@@ -5,6 +5,8 @@ import { AppHeader, Screen, Text, Divider } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
 import { STORAGE_KEYS } from '../../utils/storageKeys';
 import { formatRangeLabel, getLastNDates, getLastNMonths } from '../../utils/date';
+import { BarChart } from 'react-native-gifted-charts';
+import Svg, { Pattern, Rect } from 'react-native-svg';
 
 type Period = 'daily' | 'weekly' | 'monthly' | 'yearly';
 
@@ -31,11 +33,12 @@ export const StatsScreen: React.FC = () => {
     if (period === 'daily') {
       const dates = getLastNDates(1);
       const value = dailyCounts[dates[0]] || 0;
+      const label = new Date(dates[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       return {
-        bars: [{ label: 'Today', value }],
+        bars: [{ label, value }],
         total: value,
         avg: value,
-        rangeLabel: dates[0],
+        rangeLabel: new Date(dates[0]).toDateString(),
       };
     }
 
@@ -91,6 +94,25 @@ export const StatsScreen: React.FC = () => {
   }, [dailyCounts, period]);
 
   const maxValue = Math.max(1, ...bars.map(item => item.value));
+  const barCount = bars.length;
+  const barWidth =
+    barCount > 24 ? 8 : barCount > 16 ? 10 : barCount > 10 ? 12 : barCount > 7 ? 14 : 18;
+  const spacing = barCount > 24 ? 6 : barCount > 16 ? 8 : barCount > 10 ? 10 : 12;
+  const minHeight = 6;
+  const hasData = total > 0;
+  const patternId = 'barTrackPattern';
+
+  const chartData = bars.map(item => {
+    const value = item.value || 0;
+    const displayValue =
+      hasData && value === 0 ? Math.max(1, Math.round(maxValue * 0.02)) : value;
+    return {
+      value: displayValue,
+      label: item.label || ' ',
+      frontColor: colors.accent,
+      showGradient: false,
+    };
+  });
 
   return (
     <Screen>
@@ -143,26 +165,37 @@ export const StatsScreen: React.FC = () => {
         </View>
       </View>
 
-      <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-      >
-        <View style={styles.chartArea}>
-          {bars.map((item, index) => (
-            <View key={`${item.label}-${index}`} style={styles.barGroup}>
-              <View
-                style={[
-                  styles.bar,
-                  {
-                    backgroundColor: colors.accent,
-                    height: `${Math.round((item.value / maxValue) * 100)}%`,
-                  },
-                ]}
-              />
-              <Text variant="xs" color="textSecondary" style={styles.barLabel}>
-                {item.label}
-              </Text>
-            </View>
-          ))}
-        </View>
+      <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <BarChart
+          data={chartData}
+          height={200}
+          barWidth={barWidth}
+          spacing={spacing}
+          initialSpacing={16}
+          endSpacing={16}
+          maxValue={maxValue}
+          minHeight={minHeight}
+          noOfSections={4}
+          hideRules
+          hideYAxisText
+          yAxisThickness={0}
+          xAxisThickness={0}
+          barBorderRadius={12}
+          xAxisLabelTextStyle={{ color: colors.textSecondary, fontSize: 11 }}
+          xAxisLabelsHeight={24}
+          disableScroll={false}
+          showScrollIndicator={false}
+          frontColor={colors.accent}
+          backgroundColor="transparent"
+          patternId={patternId}
+          barBackgroundPattern={() => (
+            <Svg>
+              <Pattern id={patternId} patternUnits="objectBoundingBox" width="1" height="1">
+                <Rect x="0" y="0" width="1" height="1" rx="0.5" ry="0.5" fill={colors.border} />
+              </Pattern>
+            </Svg>
+          )}
+        />
       </View>
     </Screen>
   );
@@ -204,26 +237,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
     borderWidth: 1,
     borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 8,
-  },
-  chartArea: {
-    height: 220,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  barGroup: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  bar: {
-    width: '60%',
-    borderRadius: 10,
-  },
-  barLabel: {
-    marginTop: 6,
-    textAlign: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
   },
 });
