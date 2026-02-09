@@ -92,58 +92,59 @@ export const HomeScreen: React.FC = () => {
 
   return (
     <Screen>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.header}>
-          <View style={styles.headerRow}>
+      <View style={styles.header}>
+        <View style={styles.headerRow}>
+          <View
+            style={[
+              styles.iconBadge,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Icon
+              iconSet="MaterialIcons"
+              iconName="self-improvement"
+              size={22}
+              color={colors.primary}
+            />
+          </View>
+          <View style={styles.headerText}>
+            <Text variant="title" weight="bold">
+              Naam Jap
+            </Text>
+            <Text variant="sm" color="textSecondary">
+              Calm, focused chanting
+            </Text>
+          </View>
+          {sessionActive ? (
             <View
               style={[
-                styles.iconBadge,
-                { backgroundColor: colors.surface, borderColor: colors.border },
+                styles.statusPill,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.border,
+                },
               ]}
             >
               <Icon
                 iconSet="MaterialIcons"
-                iconName="self-improvement"
-                size={22}
-                color={colors.primary}
+                iconName="radio-button-checked"
+                size={14}
+                color={colors.secondary}
               />
-            </View>
-            <View style={styles.headerText}>
-              <Text variant="title" weight="bold">
-                Naam Jap
-              </Text>
-              <Text variant="sm" color="textSecondary">
-                Calm, focused chanting
+              <Text variant="xs" color="textSecondary">
+                Active
               </Text>
             </View>
-            {sessionActive ? (
-              <View
-                style={[
-                  styles.statusPill,
-                  {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                <Icon
-                  iconSet="MaterialIcons"
-                  iconName="radio-button-checked"
-                  size={14}
-                  color={colors.secondary}
-                />
-                <Text variant="xs" color="textSecondary">
-                  Active
-                </Text>
-              </View>
-            ) : null}
-          </View>
+          ) : null}
         </View>
+      </View>
 
-        <Divider style={styles.divider} />
+      <Divider style={styles.divider} />
+
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
 
         <View
           style={[
