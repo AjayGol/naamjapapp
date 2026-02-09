@@ -154,10 +154,10 @@ export const CounterScreen: React.FC = () => {
           <Text variant="title" weight="bold" color="primary" style={styles.count}>
             {count}
           </Text>
-          <Text variant="sm" color="textSecondary">
-            / {target}
-          </Text>
         </View>
+        <Text variant="xs" color="textSecondary">
+          Goal {target}
+        </Text>
 
         <View style={styles.ringWrapper}>
           <Svg width={ringSize} height={ringSize} style={styles.ringSvg}>
@@ -201,24 +201,8 @@ export const CounterScreen: React.FC = () => {
           </Pressable>
         </View>
 
-        <View style={styles.statRow}>
-          <View style={styles.statItem}>
-            <Text variant="xs" color="textSecondary">
-              Target
-            </Text>
-            <Text weight="semibold">{target}</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text variant="xs" color="textSecondary">
-              Remaining
-            </Text>
-            <Text weight="semibold" color="accent">
-              {Math.max(target - count, 0)}
-            </Text>
-          </View>
-        </View>
-        <Text variant="xs" color="textSecondary" style={styles.helper}>
-          Tap the circle to add a chant
+        <Text variant="sm" color="textSecondary" style={styles.remaining}>
+          Remaining {Math.max(target - count, 0)}
         </Text>
       </View>
 
@@ -296,17 +280,8 @@ const styles = StyleSheet.create({
   ringSvg: {
     position: 'absolute',
   },
-  statRow: {
-    flexDirection: 'row',
-    gap: 24,
-    marginTop: 4,
-  },
-  statItem: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  helper: {
-    marginTop: 2,
+  remaining: {
+    marginTop: 6,
   },
   toggleRow: {
     flexDirection: 'row',
