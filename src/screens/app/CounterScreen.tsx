@@ -6,13 +6,13 @@ import { useTheme } from '../../hooks/useTheme';
 import { STORAGE_KEYS } from '../../utils/storageKeys';
 import { getLocalDateKey } from '../../utils/date';
 import { useNavigation } from '@react-navigation/native';
-import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import type { AppTabParamList } from '../../navigation';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AppStackParamList } from '../../navigation/types';
 import Svg, { Circle } from 'react-native-svg';
 
 export const CounterScreen: React.FC = () => {
   const { colors } = useTheme();
-  const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList>>();
+  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [count, setCount] = useState(0);
   const [target, setTarget] = useState(108);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -132,12 +132,16 @@ export const CounterScreen: React.FC = () => {
       <Divider style={styles.divider} />
 
       <View style={styles.center}>
-        <View style={[styles.mantraPill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Pressable
+          onPress={() => navigation.navigate('SelectNaam')}
+          style={[styles.mantraPill, { backgroundColor: colors.surface, borderColor: colors.border }]}
+        >
           <Icon iconSet="MaterialIcons" iconName="spa" size={16} color={colors.primary} />
           <Text variant="sm" weight="semibold">
             {mantraName}
           </Text>
-        </View>
+          <Icon iconSet="MaterialIcons" iconName="chevron-right" size={18} color={colors.textSecondary} />
+        </Pressable>
         <View style={styles.countRow}>
           <Text variant="title" weight="bold" color="primary" style={styles.count}>
             {count}
