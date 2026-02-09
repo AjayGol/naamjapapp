@@ -15,9 +15,14 @@ import {
   cancelDailyReminder,
   scheduleDailyReminder,
 } from '../../services/notifications';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AppStackParamList } from '../../navigation/types';
 
 export const GoalsScreen: React.FC = () => {
   const { colors } = useTheme();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [reminderEnabled, setReminderEnabled] = useState(false);
   const [reminderTime, setReminderTime] = useState(() => {
     const date = new Date();
@@ -124,7 +129,7 @@ export const GoalsScreen: React.FC = () => {
 
   return (
     <Screen>
-      <AppHeader title="Goals & Reminders" />
+      <AppHeader title="Goals & Reminders" onBack={() => navigation.goBack()} />
       <Divider style={styles.divider} />
 
       <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
