@@ -10,11 +10,11 @@ import type { AppTabParamList } from '../../navigation';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../../navigation/types';
 
-
 export const HomeScreen: React.FC = () => {
   const { colors } = useTheme();
   const navigation = useNavigation<BottomTabNavigationProp<AppTabParamList>>();
-  const stackNavigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const stackNavigation =
+    useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [mantraName, setMantraName] = useState('');
   const [count, setCount] = useState(0);
   const [target, setTarget] = useState(108);
@@ -92,11 +92,24 @@ export const HomeScreen: React.FC = () => {
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <View style={styles.headerRow}>
-            <View style={[styles.iconBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Icon iconSet="MaterialIcons" iconName="self-improvement" size={22} color={colors.primary} />
+            <View
+              style={[
+                styles.iconBadge,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
+              <Icon
+                iconSet="MaterialIcons"
+                iconName="self-improvement"
+                size={22}
+                color={colors.primary}
+              />
             </View>
             <View style={styles.headerText}>
               <Text variant="title" weight="bold">
@@ -107,8 +120,21 @@ export const HomeScreen: React.FC = () => {
               </Text>
             </View>
             {sessionActive ? (
-              <View style={[styles.statusPill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                <Icon iconSet="MaterialIcons" iconName="radio-button-checked" size={14} color={colors.secondary} />
+              <View
+                style={[
+                  styles.statusPill,
+                  {
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <Icon
+                  iconSet="MaterialIcons"
+                  iconName="radio-button-checked"
+                  size={14}
+                  color={colors.secondary}
+                />
                 <Text variant="xs" color="textSecondary">
                   Active
                 </Text>
@@ -119,7 +145,12 @@ export const HomeScreen: React.FC = () => {
 
         <Divider style={styles.divider} />
 
-        <View style={[styles.progressCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <View
+          style={[
+            styles.progressCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
           <View style={styles.progressHeader}>
             <View>
               <Text variant="sm" color="textSecondary">
@@ -138,8 +169,18 @@ export const HomeScreen: React.FC = () => {
               </Text>
             </View>
           </View>
-          <View style={[styles.progressTrack, { backgroundColor: colors.border }]}>
-            <View style={[styles.progressFill, { width: `${Math.round(progress * 100)}%`, backgroundColor: colors.accent }]} />
+          <View
+            style={[styles.progressTrack, { backgroundColor: colors.border }]}
+          >
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: `${Math.round(progress * 100)}%`,
+                  backgroundColor: colors.accent,
+                },
+              ]}
+            />
           </View>
           <Text variant="xs" color="textSecondary">
             Remaining {Math.max(target - count, 0)}
@@ -147,27 +188,52 @@ export const HomeScreen: React.FC = () => {
         </View>
 
         {sessionActive && count < target ? (
-          <View style={[styles.bannerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Icon iconSet="MaterialIcons" iconName="pending-actions" size={18} color={colors.secondary} />
+          <View
+            style={[
+              styles.bannerCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Icon
+              iconSet="MaterialIcons"
+              iconName="pending-actions"
+              size={18}
+              color={colors.secondary}
+            />
             <View style={styles.bannerText}>
               <Text weight="semibold">Continue your session</Text>
               <Text variant="sm" color="textSecondary">
                 {activeMantra || 'Your mantra'} · {target - count} left
               </Text>
             </View>
-            <Button label="Continue" onPress={continueChanting} style={styles.bannerButton} />
+            <Button
+              label="Continue"
+              onPress={continueChanting}
+              style={styles.bannerButton}
+            />
           </View>
         ) : null}
 
         {!sessionActive && lastCompletedMantra ? (
-          <View style={[styles.bannerCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Icon iconSet="MaterialIcons" iconName="verified" size={18} color={colors.accent} />
+          <View
+            style={[
+              styles.bannerCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <Icon
+              iconSet="MaterialIcons"
+              iconName="verified"
+              size={18}
+              color={colors.accent}
+            />
             <View style={styles.bannerText}>
               <Text weight="semibold" color="accent">
                 Completed 108
               </Text>
               <Text variant="sm" color="textSecondary">
-                {lastCompletedMantra} {completedDate ? `· ${completedDate}` : ''}
+                {lastCompletedMantra}{' '}
+                {completedDate ? `· ${completedDate}` : ''}
               </Text>
             </View>
           </View>
@@ -189,10 +255,22 @@ export const HomeScreen: React.FC = () => {
               { backgroundColor: colors.surface, borderColor: colors.border },
             ]}
           >
-            <View style={[styles.selectAccent, { backgroundColor: colors.accent }]} />
+            <View
+              style={[styles.selectAccent, { backgroundColor: colors.accent }]}
+            />
             <View style={styles.selectBadgeWrap}>
-              <View style={[styles.selectBadge, { backgroundColor: colors.primary }]}>
-                <Icon iconSet="MaterialIcons" iconName="spa" size={18} color={colors.surface} />
+              <View
+                style={[
+                  styles.selectBadge,
+                  { backgroundColor: colors.primary },
+                ]}
+              >
+                <Icon
+                  iconSet="MaterialIcons"
+                  iconName="spa"
+                  size={18}
+                  color={colors.surface}
+                />
               </View>
             </View>
             <View style={styles.selectContent}>
@@ -203,17 +281,24 @@ export const HomeScreen: React.FC = () => {
                 {activeMantra || 'Select Naam'}
               </Text>
               <View style={styles.selectMeta}>
-                <Icon iconSet="MaterialIcons" iconName="touch-app" size={14} color={colors.textSecondary} />
+                <Icon
+                  iconSet="MaterialIcons"
+                  iconName="touch-app"
+                  size={14}
+                  color={colors.textSecondary}
+                />
                 <Text variant="xs" color="textSecondary">
                   Open selection
                 </Text>
               </View>
             </View>
             <View style={styles.selectAction}>
-              <Text variant="xs" color="textSecondary">
-                Change
-              </Text>
-              <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
+              <Icon
+                iconSet="MaterialIcons"
+                iconName="chevron-right"
+                size={22}
+                color={colors.textSecondary}
+              />
             </View>
           </Pressable>
           {error ? (

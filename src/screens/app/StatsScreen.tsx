@@ -4,7 +4,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppHeader, Screen, Text, Divider } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
 import { STORAGE_KEYS } from '../../utils/storageKeys';
-import { formatRangeLabel, getLastNDates, getLastNMonths } from '../../utils/date';
+import {
+  formatRangeLabel,
+  getLastNDates,
+  getLastNMonths,
+} from '../../utils/date';
 import { BarChart } from 'react-native-gifted-charts';
 import Svg, { Pattern, Rect } from 'react-native-svg';
 
@@ -33,7 +37,10 @@ export const StatsScreen: React.FC = () => {
     if (period === 'daily') {
       const dates = getLastNDates(1);
       const value = dailyCounts[dates[0]] || 0;
-      const label = new Date(dates[0]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const label = new Date(dates[0]).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      });
       return {
         bars: [{ label, value }],
         total: value,
@@ -96,8 +103,17 @@ export const StatsScreen: React.FC = () => {
   const maxValue = Math.max(1, ...bars.map(item => item.value));
   const barCount = bars.length;
   const barWidth =
-    barCount > 24 ? 8 : barCount > 16 ? 10 : barCount > 10 ? 12 : barCount > 7 ? 14 : 18;
-  const spacing = barCount > 24 ? 6 : barCount > 16 ? 8 : barCount > 10 ? 10 : 12;
+    barCount > 24
+      ? 8
+      : barCount > 16
+      ? 10
+      : barCount > 10
+      ? 12
+      : barCount > 7
+      ? 14
+      : 18;
+  const spacing =
+    barCount > 24 ? 6 : barCount > 16 ? 8 : barCount > 10 ? 10 : 12;
   const minHeight = 6;
   const hasData = total > 0;
   const patternId = 'barTrackPattern';
@@ -119,7 +135,11 @@ export const StatsScreen: React.FC = () => {
       <AppHeader title="Naam Jap Stats" />
       <Divider style={styles.divider} />
 
-      <View style={[styles.periodRow, { backgroundColor: colors.surface, borderColor: colors.border }]}
+      <View
+        style={[
+          styles.periodRow,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
       >
         {(['daily', 'weekly', 'monthly', 'yearly'] as Period[]).map(item => {
           const active = period === item;
@@ -132,7 +152,11 @@ export const StatsScreen: React.FC = () => {
                 { backgroundColor: active ? colors.primary : 'transparent' },
               ]}
             >
-              <Text variant="sm" weight="semibold" color={active ? 'surface' : 'textSecondary'}>
+              <Text
+                variant="sm"
+                weight="semibold"
+                color={active ? 'surface' : 'textSecondary'}
+              >
                 {item.charAt(0).toUpperCase() + item.slice(1)}
               </Text>
             </Pressable>
@@ -145,7 +169,11 @@ export const StatsScreen: React.FC = () => {
       </Text>
 
       <View style={styles.statsRow}>
-        <View style={[styles.statsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+        <View
+          style={[
+            styles.statsCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
         >
           <Text variant="lg" weight="bold">
             {total}
@@ -154,7 +182,11 @@ export const StatsScreen: React.FC = () => {
             Total Count
           </Text>
         </View>
-        <View style={[styles.statsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+        <View
+          style={[
+            styles.statsCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
         >
           <Text variant="lg" weight="bold">
             {avg}
@@ -165,7 +197,12 @@ export const StatsScreen: React.FC = () => {
         </View>
       </View>
 
-      <View style={[styles.chartCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View
+        style={[
+          styles.chartCard,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
+      >
         <BarChart
           data={chartData}
           height={200}
@@ -190,8 +227,21 @@ export const StatsScreen: React.FC = () => {
           patternId={patternId}
           barBackgroundPattern={() => (
             <Svg>
-              <Pattern id={patternId} patternUnits="objectBoundingBox" width="1" height="1">
-                <Rect x="0" y="0" width="1" height="1" rx="0.5" ry="0.5" fill={colors.border} />
+              <Pattern
+                id={patternId}
+                patternUnits="objectBoundingBox"
+                width="1"
+                height="1"
+              >
+                <Rect
+                  x="0"
+                  y="0"
+                  width="1"
+                  height="1"
+                  rx="0.5"
+                  ry="0.5"
+                  fill={colors.border}
+                />
               </Pattern>
             </Svg>
           )}

@@ -1,5 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, Pressable, FlatList, Modal, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  FlatList,
+  Modal,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Screen, Text, TextInput, Button, Icon } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
@@ -19,7 +27,8 @@ const DEFAULT_MANTRAS = [
 
 export const SelectNaamScreen: React.FC = () => {
   const { colors } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [items, setItems] = useState<string[]>(DEFAULT_MANTRAS);
   const [selected, setSelected] = useState('');
   const [query, setQuery] = useState('');
@@ -66,7 +75,9 @@ export const SelectNaamScreen: React.FC = () => {
       setError('Enter a name');
       return;
     }
-    const exists = items.some(item => item.toLowerCase() === trimmed.toLowerCase());
+    const exists = items.some(
+      item => item.toLowerCase() === trimmed.toLowerCase(),
+    );
     if (exists) {
       setError('Already exists');
       return;
@@ -99,9 +110,19 @@ export const SelectNaamScreen: React.FC = () => {
               {item}
             </Text>
             {active ? (
-              <Icon iconSet="MaterialIcons" iconName="check-circle" size={20} color={colors.surface} />
+              <Icon
+                iconSet="MaterialIcons"
+                iconName="check-circle"
+                size={20}
+                color={colors.surface}
+              />
             ) : (
-              <Icon iconSet="MaterialIcons" iconName="chevron-right" size={20} color={colors.textSecondary} />
+              <Icon
+                iconSet="MaterialIcons"
+                iconName="chevron-right"
+                size={20}
+                color={colors.textSecondary}
+              />
             )}
           </View>
         </Pressable>
@@ -121,14 +142,27 @@ export const SelectNaamScreen: React.FC = () => {
   const listHeader = useMemo(
     () => (
       <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.headerIcon}>
-          <Icon iconSet="MaterialIcons" iconName="chevron-left" size={28} color={colors.textPrimary} />
+        <Pressable
+          onPress={() => navigation.goBack()}
+          style={styles.headerIcon}
+        >
+          <Icon
+            iconSet="MaterialIcons"
+            iconName="chevron-left"
+            size={28}
+            color={colors.textPrimary}
+          />
         </Pressable>
         <Text variant="title" weight="bold">
           Select Naam
         </Text>
         <Pressable onPress={openAdd} style={styles.headerIcon}>
-          <Icon iconSet="MaterialIcons" iconName="add" size={24} color={colors.textPrimary} />
+          <Icon
+            iconSet="MaterialIcons"
+            iconName="add"
+            size={24}
+            color={colors.textPrimary}
+          />
         </Pressable>
       </View>
     ),
@@ -138,9 +172,14 @@ export const SelectNaamScreen: React.FC = () => {
   return (
     <Screen>
       {listHeader}
-      <View style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View style={[styles.searchBox, { backgroundColor: colors.surface }]}>
         <View style={styles.searchIcon}>
-          <Icon iconSet="MaterialIcons" iconName="search" size={18} color={colors.textSecondary} />
+          <Icon
+            iconSet="MaterialIcons"
+            iconName="search"
+            size={18}
+            color={colors.textSecondary}
+          />
         </View>
         <TextInput
           placeholder="Search naam..."
@@ -150,11 +189,16 @@ export const SelectNaamScreen: React.FC = () => {
         />
         {query ? (
           <Pressable onPress={() => setQuery('')} style={styles.clearBtn}>
-            <Icon iconSet="MaterialIcons" iconName="close" size={18} color={colors.textSecondary} />
+            <Icon
+              iconSet="MaterialIcons"
+              iconName="close"
+              size={18}
+              color={colors.textSecondary}
+            />
           </Pressable>
         ) : null}
       </View>
-      
+
       <FlatList
         data={filteredItems}
         keyExtractor={keyExtractor}
@@ -166,12 +210,17 @@ export const SelectNaamScreen: React.FC = () => {
 
       <Modal transparent animationType="slide" visible={modalVisible}>
         <View style={styles.modalBackdrop}>
-          <Pressable style={styles.modalDismiss} onPress={() => setModalVisible(false)} />
+          <Pressable
+            style={styles.modalDismiss}
+            onPress={() => setModalVisible(false)}
+          />
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             style={styles.modalWrap}
           >
-            <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
+            <View
+              style={[styles.modalCard, { backgroundColor: colors.surface }]}
+            >
               <Text variant="lg" weight="bold">
                 Add New Naam
               </Text>
@@ -185,7 +234,10 @@ export const SelectNaamScreen: React.FC = () => {
                 error={error}
               />
               <Button label="Add Naam" onPress={addNaam} />
-              <Pressable onPress={() => setModalVisible(false)} style={styles.modalCancel}>
+              <Pressable
+                onPress={() => setModalVisible(false)}
+                style={styles.modalCancel}
+              >
                 <Text color="textSecondary">Cancel</Text>
               </Pressable>
             </View>
@@ -212,7 +264,7 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingBottom: 24,
-    gap: 12,
+    gap: 14,
   },
   card: {
     borderWidth: 1,
@@ -226,26 +278,36 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   searchBox: {
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
     marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 6,
+    paddingVertical: 4,
+    borderWidth: 0,
   },
   searchIcon: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#0000000A',
+    backgroundColor: '#00000008',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  cardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   clearBtn: {
     width: 26,
