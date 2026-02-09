@@ -124,12 +124,17 @@ export const CounterScreen: React.FC = () => {
       <Divider style={styles.divider} />
 
       <View style={styles.center}>
-        <Text variant="sm" color="textSecondary">
-          Mantra: {mantraName}
-        </Text>
-        <Text variant="title" weight="bold" color="primary" style={styles.count}>
-          {count}
-        </Text>
+        <View style={[styles.mantraPill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Icon iconSet="MaterialIcons" iconName="spa" size={16} color={colors.primary} />
+          <Text variant="sm" weight="semibold">
+            {mantraName}
+          </Text>
+        </View>
+        <View style={styles.countRow}>
+          <Text variant="title" weight="bold" color="primary" style={styles.count}>
+            {count}
+          </Text>
+        </View>
 
         <View style={styles.ringWrapper}>
           <Svg width={ringSize} height={ringSize} style={styles.ringSvg}>
@@ -173,9 +178,22 @@ export const CounterScreen: React.FC = () => {
           </Pressable>
         </View>
 
-        <Text variant="sm" color="textSecondary" style={styles.target}>
-          Target: {target}
-        </Text>
+        <View style={styles.statRow}>
+          <View style={styles.statItem}>
+            <Text variant="xs" color="textSecondary">
+              Target
+            </Text>
+            <Text weight="semibold">{target}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text variant="xs" color="textSecondary">
+              Remaining
+            </Text>
+            <Text weight="semibold" color="accent">
+              {Math.max(target - count, 0)}
+            </Text>
+          </View>
+        </View>
       </View>
 
       <View style={styles.toggleRow}>
@@ -242,6 +260,20 @@ const styles = StyleSheet.create({
     gap: 18,
     marginTop: 20,
   },
+  mantraPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+  },
+  countRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 6,
+  },
   count: {
     fontSize: 56,
   },
@@ -262,8 +294,14 @@ const styles = StyleSheet.create({
   ringSvg: {
     position: 'absolute',
   },
-  target: {
-    marginTop: 6,
+  statRow: {
+    flexDirection: 'row',
+    gap: 24,
+    marginTop: 4,
+  },
+  statItem: {
+    alignItems: 'center',
+    gap: 4,
   },
   toggleRow: {
     flexDirection: 'row',
