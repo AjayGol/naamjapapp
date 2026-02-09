@@ -16,7 +16,6 @@ type SessionEntry = {
   mantra: string;
   count: number;
   target: number;
-  mood?: string;
   completedAt: string;
 };
 
@@ -500,7 +499,6 @@ export const HomeScreen: React.FC = () => {
                 </View>
                 <Text variant="xs" color="textSecondary">
                   {item.count}/{item.target}
-                  {item.mood ? ` · ${item.mood}` : ''}
                 </Text>
               </View>
             );

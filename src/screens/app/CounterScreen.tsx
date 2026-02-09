@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, StyleSheet, Pressable, Vibration, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Screen, Text, Divider, Icon, AppHeader } from '../../components';
@@ -15,19 +15,8 @@ type SessionEntry = {
   mantra: string;
   count: number;
   target: number;
-  mood?: string;
   completedAt: string;
 };
-
-type FocusTimerState = {
-  duration: number;
-  remaining: number;
-  running: boolean;
-  startedAt?: number;
-};
-
-const MOODS = ['Peace', 'Focus', 'Gratitude', 'Healing'];
-const TIMER_OPTIONS = [5, 10, 15];
 
 export const CounterScreen: React.FC = () => {
   const { colors } = useTheme();
@@ -39,15 +28,7 @@ export const CounterScreen: React.FC = () => {
   const [toastVisible, setToastVisible] = useState(false);
   const [malaCount, setMalaCount] = useState(0);
   const [showTapHint, setShowTapHint] = useState(true);
-  const [selectedMood, setSelectedMood] = useState(MOODS[0]);
-  const [focusDuration, setFocusDuration] = useState(600);
-  const [focusRemaining, setFocusRemaining] = useState(600);
-  const [focusRunning, setFocusRunning] = useState(false);
-  const [focusStartedAt, setFocusStartedAt] = useState<number | undefined>(
-    undefined,
-  );
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const focusTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const progress = target > 0 ? Math.min(count / target, 1) : 0;
   const ringSize = 230;
   const ringStroke = 14;
@@ -65,8 +46,6 @@ export const CounterScreen: React.FC = () => {
         malaRaw,
         hintRaw,
         goalsRaw,
-        moodRaw,
-        focusRaw,
       ] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.count),
         AsyncStorage.getItem(STORAGE_KEYS.target),
@@ -75,8 +54,6 @@ export const CounterScreen: React.FC = () => {
         AsyncStorage.getItem(STORAGE_KEYS.malaCount),
         AsyncStorage.getItem(STORAGE_KEYS.tapHintSeen),
         AsyncStorage.getItem(STORAGE_KEYS.dailyGoals),
-        AsyncStorage.getItem(STORAGE_KEYS.currentMood),
-        AsyncStorage.getItem(STORAGE_KEYS.focusTimer),
       ]);
 
       const baseTarget = targetRaw ? Number(targetRaw) || 108 : 108;
@@ -91,26 +68,6 @@ export const CounterScreen: React.FC = () => {
       if (activeRaw) setSessionActive(activeRaw === 'true');
       if (malaRaw) setMalaCount(Number(malaRaw) || 0);
       if (hintRaw === 'true') setShowTapHint(false);
-      if (moodRaw) setSelectedMood(moodRaw);
-
-      if (focusRaw) {
-        const parsed = JSON.parse(focusRaw) as FocusTimerState;
-        const baseDuration = parsed.duration || 600;
-        const remaining = parsed.remaining ?? baseDuration;
-        if (parsed.running && parsed.startedAt) {
-          const elapsed = Math.floor((Date.now() - parsed.startedAt) / 1000);
-          const nextRemaining = Math.max(0, baseDuration - elapsed);
-          setFocusDuration(baseDuration);
-          setFocusRemaining(nextRemaining);
-          setFocusRunning(nextRemaining > 0);
-          setFocusStartedAt(nextRemaining > 0 ? Date.now() : undefined);
-        } else {
-          setFocusDuration(baseDuration);
-          setFocusRemaining(remaining);
-          setFocusRunning(false);
-          setFocusStartedAt(undefined);
-        }
-      }
     };
 
     loadState();
@@ -141,54 +98,8 @@ export const CounterScreen: React.FC = () => {
       if (toastTimer.current) {
         clearTimeout(toastTimer.current);
       }
-      if (focusTimerRef.current) {
-        clearInterval(focusTimerRef.current);
-      }
     };
   }, []);
-
-  useEffect(() => {
-    if (!focusRunning) {
-      if (focusTimerRef.current) {
-        clearInterval(focusTimerRef.current);
-        focusTimerRef.current = null;
-      }
-      return;
-    }
-
-    focusTimerRef.current = setInterval(() => {
-      setFocusRemaining(prev => {
-        if (prev <= 1) {
-          if (focusTimerRef.current) {
-            clearInterval(focusTimerRef.current);
-            focusTimerRef.current = null;
-          }
-          setFocusRunning(false);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => {
-      if (focusTimerRef.current) {
-        clearInterval(focusTimerRef.current);
-        focusTimerRef.current = null;
-      }
-    };
-  }, [focusRunning]);
-
-  useEffect(() => {
-    const payload: FocusTimerState = {
-      duration: focusDuration,
-      remaining: focusRemaining,
-      running: focusRunning,
-    };
-    if (focusRunning && focusStartedAt) {
-      payload.startedAt = focusStartedAt;
-    }
-    AsyncStorage.setItem(STORAGE_KEYS.focusTimer, JSON.stringify(payload));
-  }, [focusDuration, focusRemaining, focusRunning, focusStartedAt]);
 
   const increment = useCallback(() => {
     setCount(prev => {
@@ -223,7 +134,6 @@ export const CounterScreen: React.FC = () => {
           mantra: mantraName,
           count: target,
           target,
-          mood: selectedMood,
           completedAt: new Date().toISOString(),
         };
         AsyncStorage.getItem(STORAGE_KEYS.sessionHistory).then(raw => {
@@ -257,44 +167,7 @@ export const CounterScreen: React.FC = () => {
       }
       return next;
     });
-  }, [countScale, mantraName, selectedMood, target]);
-
-  const formatTime = useMemo(() => {
-    const mins = Math.floor(focusRemaining / 60);
-    const secs = focusRemaining % 60;
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  }, [focusRemaining]);
-
-  const startFocusTimer = useCallback(
-    (minutes: number) => {
-      const duration = minutes * 60;
-      setFocusDuration(duration);
-      setFocusRemaining(duration);
-      setFocusRunning(true);
-      setFocusStartedAt(Date.now());
-    },
-    [],
-  );
-
-  const toggleFocusTimer = useCallback(() => {
-    setFocusRunning(prev => {
-      const next = !prev;
-      if (next) {
-        if (focusRemaining <= 0) {
-          setFocusRemaining(focusDuration);
-        }
-        setFocusStartedAt(Date.now());
-      } else {
-        setFocusStartedAt(undefined);
-      }
-      return next;
-    });
-  }, [focusDuration, focusRemaining]);
-
-  const setMood = useCallback((value: string) => {
-    setSelectedMood(value);
-    AsyncStorage.setItem(STORAGE_KEYS.currentMood, value);
-  }, []);
+  }, [countScale, mantraName, target]);
 
   return (
     <Screen>
@@ -394,111 +267,6 @@ export const CounterScreen: React.FC = () => {
           </Text>
         ) : null}
 
-        <View
-          style={[
-            styles.toolsCard,
-            { backgroundColor: colors.surface, borderColor: colors.border },
-          ]}
-        >
-          <View style={styles.toolsSection}>
-            <View style={styles.toolsHeader}>
-              <Text weight="semibold">Intention</Text>
-              <Text variant="xs" color="textSecondary">
-                {selectedMood}
-              </Text>
-            </View>
-            <View style={styles.chipRow}>
-              {MOODS.map(mood => {
-                const active = mood === selectedMood;
-                return (
-                  <Pressable
-                    key={mood}
-                    onPress={() => setMood(mood)}
-                    style={[
-                      styles.chip,
-                      {
-                        backgroundColor: active
-                          ? colors.primary
-                          : 'transparent',
-                        borderColor: active ? colors.primary : colors.border,
-                      },
-                    ]}
-                  >
-                    <Text
-                      variant="xs"
-                      weight="semibold"
-                      color="textPrimary"
-                      style={active ? { color: colors.surface } : undefined}
-                    >
-                      {mood}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          </View>
-
-          <View style={[styles.toolsDivider, { backgroundColor: colors.border }]} />
-
-          <View style={styles.toolsSection}>
-            <View style={styles.toolsHeader}>
-              <Text weight="semibold">Focus timer</Text>
-              <Text variant="xs" color="textSecondary">
-                {formatTime}
-              </Text>
-            </View>
-            <View style={styles.chipRow}>
-              {TIMER_OPTIONS.map(mins => {
-                const active = focusDuration === mins * 60;
-                return (
-                  <Pressable
-                    key={mins}
-                    onPress={() => startFocusTimer(mins)}
-                    style={[
-                      styles.chip,
-                      {
-                        backgroundColor: active
-                          ? colors.secondary
-                          : 'transparent',
-                        borderColor: active ? colors.secondary : colors.border,
-                      },
-                    ]}
-                  >
-                    <Text
-                      variant="xs"
-                      weight="semibold"
-                      color="textPrimary"
-                      style={active ? { color: colors.surface } : undefined}
-                    >
-                      {mins} min
-                    </Text>
-                  </Pressable>
-                );
-              })}
-              <Pressable
-                onPress={toggleFocusTimer}
-                style={[
-                  styles.chip,
-                  {
-                    backgroundColor: focusRunning
-                      ? colors.accent
-                      : 'transparent',
-                    borderColor: focusRunning ? colors.accent : colors.border,
-                  },
-                ]}
-              >
-                <Text
-                  variant="xs"
-                  weight="semibold"
-                  color="textPrimary"
-                  style={focusRunning ? { color: colors.surface } : undefined}
-                >
-                  {focusRunning ? 'Pause' : 'Start'}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
       </View>
 
       {/* Vibration is always on; no toggle UI */}
@@ -585,37 +353,6 @@ const styles = StyleSheet.create({
   },
   hint: {
     marginTop: 4,
-  },
-  toolsCard: {
-    alignSelf: 'stretch',
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 14,
-    gap: 12,
-    marginTop: 6,
-  },
-  toolsSection: {
-    gap: 10,
-  },
-  toolsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  toolsDivider: {
-    height: 1,
-    width: '100%',
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
   },
   toggleRow: {
     flexDirection: 'row',

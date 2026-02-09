@@ -4,18 +4,22 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppHeader, Screen, Text, Divider } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
 import { STORAGE_KEYS } from '../../utils/storageKeys';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AppStackParamList } from '../../navigation/types';
 
 type SessionEntry = {
   id: string;
   mantra: string;
   count: number;
   target: number;
-  mood?: string;
   completedAt: string;
 };
 
 export const HistoryScreen: React.FC = () => {
   const { colors } = useTheme();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [items, setItems] = useState<SessionEntry[]>([]);
 
   const load = useCallback(async () => {
@@ -30,7 +34,10 @@ export const HistoryScreen: React.FC = () => {
 
   return (
     <Screen>
-      <AppHeader title="Session History" />
+      <AppHeader
+        title="Session History"
+        onBack={() => navigation.goBack()}
+      />
       <Divider style={styles.divider} />
       {items.length === 0 ? (
         <View
@@ -72,11 +79,6 @@ export const HistoryScreen: React.FC = () => {
                   <Text variant="sm" color="textSecondary">
                     Count {item.count}/{item.target}
                   </Text>
-                  {item.mood ? (
-                    <Text variant="sm" color="textSecondary">
-                      Mood: {item.mood}
-                    </Text>
-                  ) : null}
                 </View>
               </View>
             );
