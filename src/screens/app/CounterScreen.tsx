@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, Vibration } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Screen, Text, Button, Divider, Icon, AppHeader } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
@@ -15,8 +15,6 @@ export const CounterScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [count, setCount] = useState(0);
   const [target, setTarget] = useState(108);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [vibrationEnabled, setVibrationEnabled] = useState(true);
   const [mantraName, setMantraName] = useState('Naam');
   const [sessionActive, setSessionActive] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
@@ -29,19 +27,15 @@ export const CounterScreen: React.FC = () => {
 
   useEffect(() => {
     const loadState = async () => {
-      const [countRaw, targetRaw, soundRaw, vibrationRaw, mantraRaw, activeRaw] = await Promise.all([
+      const [countRaw, targetRaw, mantraRaw, activeRaw] = await Promise.all([
         AsyncStorage.getItem(STORAGE_KEYS.count),
         AsyncStorage.getItem(STORAGE_KEYS.target),
-        AsyncStorage.getItem(STORAGE_KEYS.sound),
-        AsyncStorage.getItem(STORAGE_KEYS.vibration),
         AsyncStorage.getItem(STORAGE_KEYS.activeMantra),
         AsyncStorage.getItem(STORAGE_KEYS.sessionActive),
       ]);
 
       if (countRaw) setCount(Number(countRaw) || 0);
       if (targetRaw) setTarget(Number(targetRaw) || 108);
-      if (soundRaw) setSoundEnabled(soundRaw === 'true');
-      if (vibrationRaw) setVibrationEnabled(vibrationRaw === 'true');
       if (mantraRaw) setMantraName(mantraRaw);
       if (activeRaw) setSessionActive(activeRaw === 'true');
     };
@@ -56,14 +50,6 @@ export const CounterScreen: React.FC = () => {
   useEffect(() => {
     AsyncStorage.setItem(STORAGE_KEYS.target, String(target));
   }, [target]);
-
-  useEffect(() => {
-    AsyncStorage.setItem(STORAGE_KEYS.sound, String(soundEnabled));
-  }, [soundEnabled]);
-
-  useEffect(() => {
-    AsyncStorage.setItem(STORAGE_KEYS.vibration, String(vibrationEnabled));
-  }, [vibrationEnabled]);
 
   useEffect(() => {
     AsyncStorage.setItem(STORAGE_KEYS.activeMantra, mantraName);
@@ -93,6 +79,7 @@ export const CounterScreen: React.FC = () => {
         data[todayKey] = (data[todayKey] || 0) + 1;
         AsyncStorage.setItem(STORAGE_KEYS.dailyCounts, JSON.stringify(data));
       });
+      Vibration.vibrate(10);
       if (next >= target) {
         setSessionActive(false);
         AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false');
@@ -208,39 +195,7 @@ export const CounterScreen: React.FC = () => {
         </View>
       </View>
 
-      <View style={styles.toggleRow}>
-        <Pressable
-          onPress={() => setSoundEnabled(prev => !prev)}
-          style={[styles.toggleButton, { borderColor: colors.border }]}
-        >
-          <Icon
-            iconSet="MaterialIcons"
-            iconName={soundEnabled ? 'volume-up' : 'volume-off'}
-            size={22}
-            color={soundEnabled ? colors.accent : colors.textSecondary}
-          />
-          <Text variant="sm" color={soundEnabled ? 'accent' : 'textSecondary'}>
-            Sound
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => setVibrationEnabled(prev => !prev)}
-          style={[styles.toggleButton, { borderColor: colors.border }]}
-        >
-          <Icon
-            iconSet="MaterialIcons"
-            iconName={vibrationEnabled ? 'vibration' : 'phone-android'}
-            size={22}
-            color={vibrationEnabled ? colors.accent : colors.textSecondary}
-          />
-          <Text variant="sm" color={vibrationEnabled ? 'accent' : 'textSecondary'}>
-            Vibration
-          </Text>
-        </Pressable>
-      </View>
-
-      <Button label="Reset" variant="outline" onPress={reset} style={styles.reset} />
+      {/* Vibration is always on; no toggle UI */}
       {toastVisible ? (
         <View style={[styles.toast, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Icon iconSet="MaterialIcons" iconName="verified" size={18} color={colors.accent} />
@@ -323,9 +278,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-  },
-  reset: {
-    marginTop: 24,
   },
   toast: {
     position: 'absolute',
