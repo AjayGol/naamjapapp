@@ -1,28 +1,27 @@
-import PushNotification from 'react-native-push-notification';
+import notifee, {
+  AndroidImportance,
+  RepeatFrequency,
+  TriggerType,
+} from '@notifee/react-native';
 
 const CHANNEL_ID = 'naamjap-reminders';
+const DAILY_TRIGGER_ID = 'naamjap-daily-reminder';
 
-export const configureNotifications = () => {
-  PushNotification.configure({
-    onNotification: () => {},
-    requestPermissions: true,
+export const configureNotifications = async () => {
+  await notifee.requestPermission();
+
+  await notifee.createChannel({
+    id: CHANNEL_ID,
+    name: 'Naam Jap Reminders',
+    description: 'Daily reminders for your Naam Jap practice',
+    importance: AndroidImportance.DEFAULT,
+    vibration: false,
   });
-
-  PushNotification.createChannel(
-    {
-      channelId: CHANNEL_ID,
-      channelName: 'Naam Jap Reminders',
-      channelDescription: 'Daily reminders for your Naam Jap practice',
-      importance: 3,
-      vibrate: false,
-      soundName: undefined,
-    },
-    () => {},
-  );
 };
 
-export const scheduleDailyReminder = (hour: number, minute: number) => {
-  PushNotification.cancelAllLocalNotifications();
+export const scheduleDailyReminder = async (hour: number, minute: number) => {
+  await notifee.cancelTriggerNotification(DAILY_TRIGGER_ID);
+
   const now = new Date();
   const next = new Date();
   next.setHours(hour, minute, 0, 0);
@@ -30,15 +29,24 @@ export const scheduleDailyReminder = (hour: number, minute: number) => {
     next.setDate(next.getDate() + 1);
   }
 
-  PushNotification.localNotificationSchedule({
-    channelId: CHANNEL_ID,
-    message: 'Time for Naam Jap',
-    date: next,
-    repeatType: 'day',
-    allowWhileIdle: true,
-  });
+  await notifee.createTriggerNotification(
+    {
+      id: DAILY_TRIGGER_ID,
+      title: 'Naam Jap',
+      body: 'Time for Naam Jap',
+      android: {
+        channelId: CHANNEL_ID,
+        pressAction: { id: 'default' },
+      },
+    },
+    {
+      type: TriggerType.TIMESTAMP,
+      timestamp: next.getTime(),
+      repeatFrequency: RepeatFrequency.DAILY,
+    },
+  );
 };
 
-export const cancelDailyReminder = () => {
-  PushNotification.cancelAllLocalNotifications();
+export const cancelDailyReminder = async () => {
+  await notifee.cancelTriggerNotification(DAILY_TRIGGER_ID);
 };
