@@ -10,16 +10,16 @@ export type SettingsState = {
 };
 
 const initialState: SettingsState = {
-  themeMode: 'system',
+  themeMode: 'light',
   hydrated: false,
 };
 
 export const hydrateSettings = createAsyncThunk('settings/hydrate', async () => {
   const stored = await AsyncStorage.getItem(STORAGE_KEY);
-  if (stored === 'light' || stored === 'dark' || stored === 'system') {
+  if (stored === 'light' || stored === 'dark') {
     return stored as ThemeMode;
   }
-  return 'system' as ThemeMode;
+  return 'light' as ThemeMode;
 });
 
 export const persistThemeMode = createAsyncThunk(

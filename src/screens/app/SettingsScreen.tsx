@@ -58,13 +58,13 @@ export const SettingsScreen: React.FC = () => {
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.rowItem}>
             <View style={styles.rowLeft}>
-              <Icon iconSet="MaterialIcons" iconName="light-mode" size={20} color={colors.textSecondary} />
-              <Text>Light Mode</Text>
+              <Icon iconSet="MaterialIcons" iconName="dark-mode" size={20} color={colors.textSecondary} />
+              <Text>Dark Mode</Text>
             </View>
             <Switch
-              value={mode === 'light'}
+              value={mode === 'dark'}
               onValueChange={value => {
-                void dispatch(persistThemeMode(value ? 'light' : 'dark'));
+                void dispatch(persistThemeMode(value ? 'dark' : 'light'));
               }}
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor={colors.surface}
