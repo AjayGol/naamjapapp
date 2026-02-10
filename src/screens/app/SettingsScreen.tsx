@@ -5,6 +5,9 @@ import {
   Switch,
   Pressable,
   ScrollView,
+  Linking,
+  Share,
+  Platform,
 } from 'react-native';
 import { Screen, Text, Divider, Icon } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
@@ -20,6 +23,25 @@ export const SettingsScreen: React.FC = () => {
   const mode = useAppSelector(state => state.settings.themeMode);
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
+  const supportEmail = 'support@naamjap.app';
+  const appStoreUrl = 'https://apps.apple.com/app/id0000000000';
+  const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.naamjapapp';
+
+  const handleFeedback = () => {
+    Linking.openURL(`mailto:${supportEmail}?subject=Naam%20Jap%20Feedback`);
+  };
+
+  const handleRate = () => {
+    const url = Platform.OS === 'ios' ? appStoreUrl : playStoreUrl;
+    Linking.openURL(url);
+  };
+
+  const handleInvite = async () => {
+    const url = Platform.OS === 'ios' ? appStoreUrl : playStoreUrl;
+    await Share.share({
+      message: `Try Naam Jap for daily chanting.\n${url}`,
+    });
+  };
 
   return (
     <Screen>
@@ -129,25 +151,28 @@ export const SettingsScreen: React.FC = () => {
         </View>
 
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Pressable style={styles.rowItem} onPress={() => {}}>
+          <Pressable style={styles.rowItem} onPress={handleFeedback}>
             <View style={styles.rowLeft}>
               <Icon iconSet="MaterialIcons" iconName="chat-bubble-outline" size={20} color={colors.textSecondary} />
               <Text>Write Your Feedback</Text>
             </View>
+            <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
           </Pressable>
           <Divider />
-          <Pressable style={styles.rowItem} onPress={() => {}}>
+          <Pressable style={styles.rowItem} onPress={handleRate}>
             <View style={styles.rowLeft}>
               <Icon iconSet="MaterialIcons" iconName="star-border" size={20} color={colors.textSecondary} />
               <Text>Rate Our App</Text>
             </View>
+            <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
           </Pressable>
           <Divider />
-          <Pressable style={styles.rowItem} onPress={() => {}}>
+          <Pressable style={styles.rowItem} onPress={handleInvite}>
             <View style={styles.rowLeft}>
               <Icon iconSet="MaterialIcons" iconName="share" size={20} color={colors.textSecondary} />
               <Text>Invite Friends & Family</Text>
             </View>
+            <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
           </Pressable>
           {/*<Divider />*/}
           {/*<Pressable style={styles.rowItem} onPress={() => {}}>*/}
