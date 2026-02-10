@@ -145,34 +145,27 @@ export const StatsScreen: React.FC = () => {
     }
 
     const currentYear = new Date().getFullYear();
-    const startYear = currentYear - 2;
-    const yearTotals: BarPoint[] = Array.from({ length: 3 }, (_, index) => ({
+    const startYear = currentYear - 4;
+    const yearTotals: BarPoint[] = Array.from({ length: 5 }, (_, index) => ({
       label: String(startYear + index),
       value: 0,
     }));
 
     Object.entries(dailyCounts).forEach(([key, value]) => {
       const year = Number(key.slice(0, 4));
+      if (Number.isNaN(year) || year > currentYear) return;
       const index = year - startYear;
       if (index >= 0 && index < yearTotals.length) {
         yearTotals[index].value += value;
       }
     });
 
-    // If the current year has data, keep older years at zero to focus on recent activity.
-    const currentYearIndex = yearTotals.length - 1;
-    if (yearTotals[currentYearIndex].value > 0) {
-      for (let i = 0; i < currentYearIndex; i += 1) {
-        yearTotals[i].value = 0;
-      }
-    }
-
     const totalValue = yearTotals.reduce((sum, item) => sum + item.value, 0);
     return {
       bars: yearTotals,
       total: totalValue,
-      avg: Math.round(totalValue / 3),
-      rangeLabel: `${startYear} - ${startYear + 2}`,
+      avg: Math.round(totalValue / yearTotals.length),
+      rangeLabel: `${startYear} - ${currentYear}`,
     };
   }, [anchorDate, dailyCounts, getCurrentMonthDates, getCurrentWeekDates, period]);
 
@@ -187,7 +180,9 @@ export const StatsScreen: React.FC = () => {
   const chartData = bars.map(item => {
     const value = item.value || 0;
     const displayValue =
-      hasData && value === 0 ? Math.max(1, Math.round(maxValue * 0.02)) : value;
+      hasData && value === 0 && period !== 'yearly'
+        ? Math.max(1, Math.round(maxValue * 0.02))
+        : value;
     return {
       value: displayValue,
       label: item.label || ' ',
@@ -283,7 +278,7 @@ export const StatsScreen: React.FC = () => {
             {avg}
           </Text>
           <Text variant="sm" color="textSecondary">
-            Avg / {period === 'yearly' ? 'Month' : 'Day'}
+            Avg / {period === 'yearly' ? 'Year' : 'Day'}
           </Text>
         </View>
       </View>
