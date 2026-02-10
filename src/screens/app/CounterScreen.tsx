@@ -20,7 +20,8 @@ type SessionEntry = {
 
 export const CounterScreen: React.FC = () => {
   const { colors } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+  const navigation =
+      useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [count, setCount] = useState(0);
   const [target, setTarget] = useState(108);
   const [mantraName, setMantraName] = useState('Naam');
@@ -30,8 +31,8 @@ export const CounterScreen: React.FC = () => {
   const [showTapHint, setShowTapHint] = useState(true);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progress = target > 0 ? Math.min(count / target, 1) : 0;
-  const ringSize = 230;
-  const ringStroke = 14;
+  const ringSize = 260;
+  const ringStroke = 16;
   const ringRadius = (ringSize - ringStroke) / 2;
   const circumference = 2 * Math.PI * ringRadius;
   const countScale = useRef(new Animated.Value(1)).current;
@@ -58,8 +59,8 @@ export const CounterScreen: React.FC = () => {
 
       const baseTarget = targetRaw ? Number(targetRaw) || 108 : 108;
       const goals = goalsRaw
-        ? (JSON.parse(goalsRaw) as Record<number, number>)
-        : {};
+          ? (JSON.parse(goalsRaw) as Record<number, number>)
+          : {};
       const todayTarget = goals[getWeekdayKey()] || baseTarget;
       setTarget(todayTarget);
 
@@ -115,8 +116,16 @@ export const CounterScreen: React.FC = () => {
       });
       Vibration.vibrate(10);
       Animated.sequence([
-        Animated.timing(countScale, { toValue: 1.08, duration: 120, useNativeDriver: true }),
-        Animated.timing(countScale, { toValue: 1, duration: 120, useNativeDriver: true }),
+        Animated.timing(countScale, {
+          toValue: 1.08,
+          duration: 120,
+          useNativeDriver: true,
+        }),
+        Animated.timing(countScale, {
+          toValue: 1,
+          duration: 120,
+          useNativeDriver: true,
+        }),
       ]).start();
       setShowTapHint(prev => {
         if (prev) {
@@ -128,7 +137,10 @@ export const CounterScreen: React.FC = () => {
         setSessionActive(false);
         AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false');
         AsyncStorage.setItem(STORAGE_KEYS.lastCompletedMantra, mantraName);
-        AsyncStorage.setItem(STORAGE_KEYS.lastCompletedAt, new Date().toISOString());
+        AsyncStorage.setItem(
+            STORAGE_KEYS.lastCompletedAt,
+            new Date().toISOString(),
+        );
         const entry: SessionEntry = {
           id: `${Date.now()}`,
           mantra: mantraName,
@@ -140,8 +152,8 @@ export const CounterScreen: React.FC = () => {
           const list = raw ? (JSON.parse(raw) as SessionEntry[]) : [];
           const nextList = [entry, ...list].slice(0, 200);
           AsyncStorage.setItem(
-            STORAGE_KEYS.sessionHistory,
-            JSON.stringify(nextList),
+              STORAGE_KEYS.sessionHistory,
+              JSON.stringify(nextList),
           );
         });
         setMalaCount(prev => {
@@ -170,118 +182,157 @@ export const CounterScreen: React.FC = () => {
   }, [countScale, mantraName, target]);
 
   return (
-    <Screen>
-      <AppHeader title="Mantra Counter" />
+      <Screen>
+        <AppHeader title="Mantra Counter" />
 
-      <Divider style={styles.divider} />
+        <Divider style={styles.divider} />
 
-      <View style={styles.center}>
         <View style={styles.topRow}>
           <Pressable
-            onPress={() => navigation.navigate('SelectNaam')}
-            style={[styles.mantraPill, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => navigation.navigate('SelectNaam')}
+              style={[
+                styles.mantraPill,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
           >
-            <Icon iconSet="MaterialIcons" iconName="spa" size={16} color={colors.primary} />
+            <Icon
+                iconSet="MaterialIcons"
+                iconName="spa"
+                size={16}
+                color={colors.primary}
+            />
             <Text variant="sm" weight="semibold">
               {mantraName}
             </Text>
-            <Icon iconSet="MaterialIcons" iconName="chevron-right" size={18} color={colors.textSecondary} />
+            <Icon
+                iconSet="MaterialIcons"
+                iconName="chevron-right"
+                size={18}
+                color={colors.textSecondary}
+            />
           </Pressable>
-          <View style={[styles.malaPill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <Icon iconSet="MaterialIcons" iconName="whatshot" size={16} color={colors.accent} />
+          <View
+              style={[
+                styles.malaPill,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+          >
+            <Icon
+                iconSet="MaterialIcons"
+                iconName="whatshot"
+                size={16}
+                color={colors.accent}
+            />
             <Text variant="xs" color="textSecondary">
               Mala
             </Text>
             <Text weight="semibold">{malaCount}</Text>
           </View>
         </View>
-        <Animated.View style={[styles.countRow, { transform: [{ scale: countScale }] }]}>
-          <Text variant="title" weight="bold" color="primary" style={styles.count}>
-            {count}
-          </Text>
-        </Animated.View>
 
-        <View style={styles.ringWrapper}>
-          <Svg width={ringSize} height={ringSize} style={styles.ringSvg}>
-            <Circle
-              cx={ringSize / 2}
-              cy={ringSize / 2}
-              r={ringRadius}
-              stroke={colors.border}
-              strokeWidth={ringStroke}
-              fill="none"
-            />
-            <Circle
-              cx={ringSize / 2}
-              cy={ringSize / 2}
-              r={ringRadius}
-              stroke={colors.accent}
-              strokeWidth={ringStroke + 6}
-              opacity={0.12}
-              fill="none"
-              strokeDasharray={`${circumference} ${circumference}`}
-              strokeDashoffset={circumference * (1 - progress)}
-              strokeLinecap="round"
-              rotation={-90}
-              originX={ringSize / 2}
-              originY={ringSize / 2}
-            />
-            <Circle
-              cx={ringSize / 2}
-              cy={ringSize / 2}
-              r={ringRadius}
-              stroke={colors.accent}
-              strokeWidth={ringStroke}
-              fill="none"
-              strokeDasharray={`${circumference} ${circumference}`}
-              strokeDashoffset={circumference * (1 - progress)}
-              strokeLinecap="round"
-              rotation={-90}
-              originX={ringSize / 2}
-              originY={ringSize / 2}
-            />
-          </Svg>
-          <Pressable
-            onPress={increment}
-            style={({ pressed }) => [
-              styles.circle,
-              {
-                borderColor: colors.primary,
-                backgroundColor: colors.surface,
-                opacity: pressed ? 0.9 : 1,
-              },
-            ]}
-          >
-            <Text variant="lg" weight="semibold" color="primary">
-              Tap
-            </Text>
-          </Pressable>
+        <View style={styles.center}>
+          <View style={styles.ringWrapper}>
+            <Svg width={ringSize} height={ringSize} style={styles.ringSvg}>
+              <Circle
+                  cx={ringSize / 2}
+                  cy={ringSize / 2}
+                  r={ringRadius}
+                  stroke={colors.border}
+                  strokeWidth={ringStroke}
+                  fill="none"
+              />
+              <Circle
+                  cx={ringSize / 2}
+                  cy={ringSize / 2}
+                  r={ringRadius}
+                  stroke={colors.primary}
+                  strokeWidth={ringStroke + 8}
+                  opacity={0.12}
+                  fill="none"
+                  strokeDasharray={`${circumference} ${circumference}`}
+                  strokeDashoffset={circumference * (1 - progress)}
+                  strokeLinecap="round"
+                  rotation={-90}
+                  originX={ringSize / 2}
+                  originY={ringSize / 2}
+              />
+              <Circle
+                  cx={ringSize / 2}
+                  cy={ringSize / 2}
+                  r={ringRadius}
+                  stroke={colors.primary}
+                  strokeWidth={ringStroke}
+                  fill="none"
+                  strokeDasharray={`${circumference} ${circumference}`}
+                  strokeDashoffset={circumference * (1 - progress)}
+                  strokeLinecap="round"
+                  rotation={-90}
+                  originX={ringSize / 2}
+                  originY={ringSize / 2}
+              />
+            </Svg>
+            <Pressable
+                onPress={increment}
+                style={({ pressed }) => [
+                  styles.circle,
+                  {
+                    backgroundColor: colors.surface,
+                    opacity: pressed ? 0.9 : 1,
+                  },
+                ]}
+            >
+              <Animated.View
+                  style={{
+                    alignItems: 'center',
+                    transform: [{ scale: countScale }],
+                  }}
+              >
+                <Text weight="bold" color="primary" style={styles.count}>
+                  {count}
+                </Text>
+                <Text variant="sm" color="textSecondary">
+                  Tap to add
+                </Text>
+                <Text variant="xs" color="textSecondary">
+                  Goal {target}
+                </Text>
+              </Animated.View>
+            </Pressable>
+          </View>
+
+          <Text variant="sm" color="textSecondary" style={styles.remaining}>
+            Remaining {Math.max(target - count, 0)}
+          </Text>
+          {showTapHint ? (
+              <Text variant="xs" color="textSecondary" style={styles.hint}>
+                Tap the circle to add a chant
+              </Text>
+          ) : null}
         </View>
 
-        <Text variant="sm" color="textSecondary" style={styles.remaining}>
-          Remaining {Math.max(target - count, 0)}
-        </Text>
-        {showTapHint ? (
-          <Text variant="xs" color="textSecondary" style={styles.hint}>
-            Tap the circle to add a chant
-          </Text>
+        {/* Vibration is always on; no toggle UI */}
+        {toastVisible ? (
+            <View
+                style={[
+                  styles.toast,
+                  { backgroundColor: colors.surface, borderColor: colors.border },
+                ]}
+            >
+              <Icon
+                  iconSet="MaterialIcons"
+                  iconName="verified"
+                  size={18}
+                  color={colors.accent}
+              />
+              <Text weight="semibold" color="accent">
+                Completed 108
+              </Text>
+              <Text variant="xs" color="textSecondary">
+                {mantraName} · restarting
+              </Text>
+            </View>
         ) : null}
-
-      </View>
-
-      {/* Vibration is always on; no toggle UI */}
-      {toastVisible ? (
-        <View style={[styles.toast, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Icon iconSet="MaterialIcons" iconName="verified" size={18} color={colors.accent} />
-          <Text weight="semibold" color="accent">
-            Completed 108
-          </Text>
-          <Text variant="xs" color="textSecondary">
-            {mantraName} · restarting
-          </Text>
-        </View>
-      ) : null}
-    </Screen>
+      </Screen>
   );
 };
 
@@ -290,15 +341,18 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   center: {
+    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 18,
-    marginTop: 20,
+    paddingBottom: 24,
+    marginTop : 70
   },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 10,
+    marginTop: 20,
   },
   mantraPill: {
     flexDirection: 'row',
@@ -318,30 +372,24 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
   },
-  countRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 6,
-  },
   count: {
-    fontSize: 56,
+    fontSize: 64,
   },
   circle: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    borderWidth: 2,
+    width: 176,
+    height: 176,
+    borderRadius: 88,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
     shadowOffset: { width: 0, height: 6 },
     elevation: 3,
   },
   ringWrapper: {
-    width: 230,
-    height: 230,
+    width: 260,
+    height: 260,
     alignItems: 'center',
     justifyContent: 'center',
   },
