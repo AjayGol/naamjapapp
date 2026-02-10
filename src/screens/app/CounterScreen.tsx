@@ -21,7 +21,7 @@ type SessionEntry = {
 export const CounterScreen: React.FC = () => {
   const { colors } = useTheme();
   const navigation =
-      useNavigation<NativeStackNavigationProp<AppStackParamList>>();
+    useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [count, setCount] = useState(0);
   const [target, setTarget] = useState(108);
   const [mantraName, setMantraName] = useState('');
@@ -150,8 +150,8 @@ export const CounterScreen: React.FC = () => {
         AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false');
         AsyncStorage.setItem(STORAGE_KEYS.lastCompletedMantra, mantraName);
         AsyncStorage.setItem(
-            STORAGE_KEYS.lastCompletedAt,
-            new Date().toISOString(),
+          STORAGE_KEYS.lastCompletedAt,
+          new Date().toISOString(),
         );
         const entry: SessionEntry = {
           id: `${Date.now()}`,
@@ -164,8 +164,8 @@ export const CounterScreen: React.FC = () => {
           const list = raw ? (JSON.parse(raw) as SessionEntry[]) : [];
           const nextList = [entry, ...list].slice(0, 200);
           AsyncStorage.setItem(
-              STORAGE_KEYS.sessionHistory,
-              JSON.stringify(nextList),
+            STORAGE_KEYS.sessionHistory,
+            JSON.stringify(nextList),
           );
         });
         setMalaCount(prev => {
@@ -194,157 +194,153 @@ export const CounterScreen: React.FC = () => {
   }, [countScale, mantraName, target]);
 
   return (
-      <Screen>
-        <AppHeader title="Mantra Counter" />
+    <Screen>
+      <AppHeader title="Mantra Counter" />
 
-        <Divider style={styles.divider} />
+      <Divider style={styles.divider} />
 
-        <View style={styles.topRow}>
-          <Pressable
-              onPress={() => navigation.navigate('SelectNaam')}
-              style={[
-                styles.mantraPill,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
-          >
-            <Icon
-                iconSet="MaterialIcons"
-                iconName="spa"
-                size={16}
-                color={colors.primary}
-            />
-            <Text variant="sm" weight="semibold">
-              {mantraName || 'Select Naam'}
-            </Text>
-            <Icon
-                iconSet="MaterialIcons"
-                iconName="chevron-right"
-                size={18}
-                color={colors.textSecondary}
-            />
-          </Pressable>
-          <View
-              style={[
-                styles.malaPill,
-                { backgroundColor: colors.surface, borderColor: colors.border },
-              ]}
-          >
-            <Icon
-                iconSet="MaterialIcons"
-                iconName="whatshot"
-                size={16}
-                color={colors.accent}
-            />
-            <Text variant="xs" color="textSecondary">
-              Mala
-            </Text>
-            <Text weight="semibold">{malaCount}</Text>
-          </View>
-        </View>
-
-        <View style={styles.center}>
-          <View style={styles.ringWrapper}>
-            <Svg width={ringSize} height={ringSize} style={styles.ringSvg}>
-              <Circle
-                  cx={ringSize / 2}
-                  cy={ringSize / 2}
-                  r={ringRadius}
-                  stroke={colors.border}
-                  strokeWidth={ringStroke}
-                  fill="none"
-              />
-              <Circle
-                  cx={ringSize / 2}
-                  cy={ringSize / 2}
-                  r={ringRadius}
-                  stroke={colors.primary}
-                  strokeWidth={ringStroke + 8}
-                  opacity={0.12}
-                  fill="none"
-                  strokeDasharray={`${circumference} ${circumference}`}
-                  strokeDashoffset={circumference * (1 - progress)}
-                  strokeLinecap="round"
-                  rotation={-90}
-                  originX={ringSize / 2}
-                  originY={ringSize / 2}
-              />
-              <Circle
-                  cx={ringSize / 2}
-                  cy={ringSize / 2}
-                  r={ringRadius}
-                  stroke={colors.primary}
-                  strokeWidth={ringStroke}
-                  fill="none"
-                  strokeDasharray={`${circumference} ${circumference}`}
-                  strokeDashoffset={circumference * (1 - progress)}
-                  strokeLinecap="round"
-                  rotation={-90}
-                  originX={ringSize / 2}
-                  originY={ringSize / 2}
-              />
-            </Svg>
-            <Pressable
-                onPress={increment}
-                style={({ pressed }) => [
-                  styles.circle,
-                  {
-                    backgroundColor: colors.surface,
-                    opacity: pressed ? 0.9 : 1,
-                  },
-                ]}
-            >
-              <Animated.View
-                  style={{
-                    alignItems: 'center',
-                    transform: [{ scale: countScale }],
-                  }}
-              >
-                <Text weight="bold" color="primary" style={styles.count}>
-                  {count}
-                </Text>
-                <Text variant="sm" color="textSecondary">
-                  Tap to add
-                </Text>
-                <Text variant="xs" color="textSecondary">
-                  Goal {target}
-                </Text>
-              </Animated.View>
-            </Pressable>
-          </View>
-
-          <Text variant="sm" color="textSecondary" style={styles.remaining}>
-            Remaining {Math.max(target - count, 0)}
+      <Pressable
+        onPress={() => navigation.navigate('SelectNaam')}
+        style={styles.mantraHeader}
+      >
+        <Text variant="xs" color="textSecondary" style={styles.mantraLabel}>
+          Current mantra
+        </Text>
+        <Text
+          variant="lg"
+          weight="semibold"
+          style={styles.mantraName}
+        >
+          {mantraName || 'Select Naam'}
+        </Text>
+        <View style={styles.mantraAction}>
+          <Text variant="xs" color="primary">
+            Tap to change
           </Text>
-          {showTapHint ? (
-              <Text variant="xs" color="textSecondary" style={styles.hint}>
-                Tap the circle to add a chant
-              </Text>
-          ) : null}
         </View>
+      </Pressable>
 
-        {/* Vibration is always on; no toggle UI */}
-        {toastVisible ? (
-            <View
-                style={[
-                  styles.toast,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
-                ]}
+      <View style={styles.center}>
+        <View style={styles.ringWrapper}>
+          <Svg width={ringSize} height={ringSize} style={styles.ringSvg}>
+            <Circle
+              cx={ringSize / 2}
+              cy={ringSize / 2}
+              r={ringRadius}
+              stroke={colors.border}
+              strokeWidth={ringStroke}
+              fill="none"
+            />
+            <Circle
+              cx={ringSize / 2}
+              cy={ringSize / 2}
+              r={ringRadius}
+              stroke={colors.primary}
+              strokeWidth={ringStroke + 8}
+              opacity={0.12}
+              fill="none"
+              strokeDasharray={`${circumference} ${circumference}`}
+              strokeDashoffset={circumference * (1 - progress)}
+              strokeLinecap="round"
+              rotation={-90}
+              originX={ringSize / 2}
+              originY={ringSize / 2}
+            />
+            <Circle
+              cx={ringSize / 2}
+              cy={ringSize / 2}
+              r={ringRadius}
+              stroke={colors.primary}
+              strokeWidth={ringStroke}
+              fill="none"
+              strokeDasharray={`${circumference} ${circumference}`}
+              strokeDashoffset={circumference * (1 - progress)}
+              strokeLinecap="round"
+              rotation={-90}
+              originX={ringSize / 2}
+              originY={ringSize / 2}
+            />
+          </Svg>
+          <Pressable
+            onPress={increment}
+            style={({ pressed }) => [
+              styles.circle,
+              {
+                backgroundColor: colors.surface,
+                opacity: pressed ? 0.9 : 1,
+              },
+            ]}
+          >
+            <Animated.View
+              style={{
+                alignItems: 'center',
+                transform: [{ scale: countScale }],
+              }}
             >
-              <Icon
-                  iconSet="MaterialIcons"
-                  iconName="verified"
-                  size={18}
-                  color={colors.accent}
-              />
-              <Text weight="semibold" color="accent">
-                Completed 108
+              <Text weight="bold" color="primary" style={styles.count}>
+                {count}
+              </Text>
+              <Text variant="sm" color="textSecondary">
+                Tap to add
               </Text>
               <Text variant="xs" color="textSecondary">
-                {mantraName} · restarting
+                Goal {target}
               </Text>
-            </View>
+            </Animated.View>
+          </Pressable>
+        </View>
+
+        <Text variant="sm" color="textSecondary" style={styles.remaining}>
+          Remaining {Math.max(target - count, 0)}
+        </Text>
+        {showTapHint ? (
+          <Text variant="xs" color="textSecondary" style={styles.hint}>
+            Tap the circle to add a chant
+          </Text>
         ) : null}
-      </Screen>
+
+        <View
+          style={[
+            styles.malaPill,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <Icon
+            iconSet="MaterialIcons"
+            iconName="whatshot"
+            size={16}
+            color={colors.accent}
+          />
+          <Text variant="xs" color="textSecondary">
+            Mala
+          </Text>
+          <Text weight="semibold">{malaCount}</Text>
+        </View>
+      </View>
+
+      {/* Vibration is always on; no toggle UI */}
+      {toastVisible ? (
+        <View
+          style={[
+            styles.toast,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <Icon
+            iconSet="MaterialIcons"
+            iconName="verified"
+            size={18}
+            color={colors.accent}
+          />
+          <Text weight="semibold" color="accent">
+            Completed 108
+          </Text>
+          <Text variant="xs" color="textSecondary">
+            {mantraName} · restarting
+          </Text>
+        </View>
+      ) : null}
+    </Screen>
   );
 };
 
@@ -357,7 +353,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 18,
     paddingBottom: 24,
-    marginTop : 70
+    marginTop: 30,
   },
   topRow: {
     flexDirection: 'row',
@@ -366,14 +362,21 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 20,
   },
-  mantraPill: {
-    flexDirection: 'row',
+  mantraHeader: {
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
+    justifyContent: 'center',
+    marginTop: 8,
+    paddingHorizontal: 24,
+  },
+  mantraLabel: {
+    marginBottom: 6,
+  },
+  mantraName: {
+    textAlign: 'center',
+    maxWidth: 320,
+  },
+  mantraAction: {
+    marginTop: 6,
   },
   malaPill: {
     flexDirection: 'row',
