@@ -61,14 +61,14 @@ export const SettingsScreen: React.FC = () => {
               thumbColor={colors.surface}
             />
           </View>
-          <Divider />
-          <Pressable style={styles.rowItem} onPress={() => {}}>
-            <View style={styles.rowLeft}>
-              <Icon iconSet="MaterialIcons" iconName="history" size={20} color={colors.textSecondary} />
-              <Text>Wrapped 2025</Text>
-            </View>
-            <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
-          </Pressable>
+          {/*<Divider />*/}
+          {/*<Pressable style={styles.rowItem} onPress={() => {}}>*/}
+          {/*  <View style={styles.rowLeft}>*/}
+          {/*    <Icon iconSet="MaterialIcons" iconName="history" size={20} color={colors.textSecondary} />*/}
+          {/*    <Text>Wrapped 2025</Text>*/}
+          {/*  </View>*/}
+          {/*  <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />*/}
+          {/*</Pressable>*/}
         </View>
 
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -98,13 +98,13 @@ export const SettingsScreen: React.FC = () => {
             <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
           </Pressable>
           <Divider />
-          <Pressable style={styles.rowItem} onPress={() => {}}>
-            <View style={styles.rowLeft}>
-              <Icon iconSet="MaterialIcons" iconName="add" size={20} color={colors.textSecondary} />
-              <Text>Add Naam Logs</Text>
-            </View>
-            <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
-          </Pressable>
+          {/*<Pressable style={styles.rowItem} onPress={() => {}}>*/}
+          {/*  <View style={styles.rowLeft}>*/}
+          {/*    <Icon iconSet="MaterialIcons" iconName="add" size={20} color={colors.textSecondary} />*/}
+          {/*    <Text>Add Naam Logs</Text>*/}
+          {/*  </View>*/}
+          {/*  <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />*/}
+          {/*</Pressable>*/}
           <Divider />
           <Pressable style={styles.rowItem} onPress={() => {}}>
             <View style={styles.rowLeft}>
@@ -149,30 +149,30 @@ export const SettingsScreen: React.FC = () => {
               <Text>Invite Friends & Family</Text>
             </View>
           </Pressable>
-          <Divider />
-          <Pressable style={styles.rowItem} onPress={() => {}}>
-            <View style={styles.rowLeft}>
-              <Icon iconSet="MaterialIcons" iconName="notes" size={20} color={colors.textSecondary} />
-              <Text>Release Notes</Text>
-            </View>
-          </Pressable>
-          <Divider />
-          <Pressable style={styles.rowItem} onPress={() => {}}>
-            <View style={styles.rowLeft}>
-              <Icon iconSet="MaterialIcons" iconName="playlist-add-check" size={20} color={colors.textSecondary} />
-              <Text>Upcoming Features</Text>
-            </View>
-          </Pressable>
+          {/*<Divider />*/}
+          {/*<Pressable style={styles.rowItem} onPress={() => {}}>*/}
+          {/*  <View style={styles.rowLeft}>*/}
+          {/*    <Icon iconSet="MaterialIcons" iconName="notes" size={20} color={colors.textSecondary} />*/}
+          {/*    <Text>Release Notes</Text>*/}
+          {/*  </View>*/}
+          {/*</Pressable>*/}
+          {/*<Divider />*/}
+          {/*<Pressable style={styles.rowItem} onPress={() => {}}>*/}
+          {/*  <View style={styles.rowLeft}>*/}
+          {/*    <Icon iconSet="MaterialIcons" iconName="playlist-add-check" size={20} color={colors.textSecondary} />*/}
+          {/*    <Text>Upcoming Features</Text>*/}
+          {/*  </View>*/}
+          {/*</Pressable>*/}
         </View>
 
-        <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Pressable style={styles.rowItem} onPress={() => {}}>
-            <View style={styles.rowLeft}>
-              <Icon iconSet="MaterialIcons" iconName="cloud-upload" size={20} color={colors.textSecondary} />
-              <Text>Backup & Restore (Beta)</Text>
-            </View>
-          </Pressable>
-        </View>
+        {/*<View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>*/}
+        {/*  <Pressable style={styles.rowItem} onPress={() => {}}>*/}
+        {/*    <View style={styles.rowLeft}>*/}
+        {/*      <Icon iconSet="MaterialIcons" iconName="cloud-upload" size={20} color={colors.textSecondary} />*/}
+        {/*      <Text>Backup & Restore (Beta)</Text>*/}
+        {/*    </View>*/}
+        {/*  </Pressable>*/}
+        {/*</View>*/}
 
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Pressable style={styles.rowItem} onPress={() => {}}>
