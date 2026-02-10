@@ -318,7 +318,7 @@ export const StatsScreen: React.FC = () => {
             }}
             xAxisLabelsHeight={period === 'weekly' ? 40 : 34}
             xAxisLabelsVerticalShift={period === 'monthly' ? 15 : period === 'yearly' ? 18 : 0}
-            labelWidth={period === 'yearly' ? 40 : period === 'monthly' ? 22 : 28}
+            labelWidth={period === 'yearly' ? 30 : period === 'monthly' ? 22 : 28}
             disableScroll
             showScrollIndicator={false}
             barBorderRadius={12}
