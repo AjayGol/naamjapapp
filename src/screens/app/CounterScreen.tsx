@@ -5,7 +5,7 @@ import { Screen, Text, Divider, Icon, AppHeader } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
 import { STORAGE_KEYS } from '../../utils/storageKeys';
 import { getLocalDateKey, getWeekdayKey } from '../../utils/date';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../../navigation/types';
 import Svg, { Circle } from 'react-native-svg';
@@ -37,42 +37,44 @@ export const CounterScreen: React.FC = () => {
   const circumference = 2 * Math.PI * ringRadius;
   const countScale = useRef(new Animated.Value(1)).current;
 
-  useEffect(() => {
-    const loadState = async () => {
-      const [
-        countRaw,
-        targetRaw,
-        mantraRaw,
-        activeRaw,
-        malaRaw,
-        hintRaw,
-        goalsRaw,
-      ] = await Promise.all([
-        AsyncStorage.getItem(STORAGE_KEYS.count),
-        AsyncStorage.getItem(STORAGE_KEYS.target),
-        AsyncStorage.getItem(STORAGE_KEYS.activeMantra),
-        AsyncStorage.getItem(STORAGE_KEYS.sessionActive),
-        AsyncStorage.getItem(STORAGE_KEYS.malaCount),
-        AsyncStorage.getItem(STORAGE_KEYS.tapHintSeen),
-        AsyncStorage.getItem(STORAGE_KEYS.dailyGoals),
-      ]);
+  const loadState = useCallback(async () => {
+    const [
+      countRaw,
+      targetRaw,
+      mantraRaw,
+      activeRaw,
+      malaRaw,
+      hintRaw,
+      goalsRaw,
+    ] = await Promise.all([
+      AsyncStorage.getItem(STORAGE_KEYS.count),
+      AsyncStorage.getItem(STORAGE_KEYS.target),
+      AsyncStorage.getItem(STORAGE_KEYS.activeMantra),
+      AsyncStorage.getItem(STORAGE_KEYS.sessionActive),
+      AsyncStorage.getItem(STORAGE_KEYS.malaCount),
+      AsyncStorage.getItem(STORAGE_KEYS.tapHintSeen),
+      AsyncStorage.getItem(STORAGE_KEYS.dailyGoals),
+    ]);
 
-      const baseTarget = targetRaw ? Number(targetRaw) || 108 : 108;
-      const goals = goalsRaw
-          ? (JSON.parse(goalsRaw) as Record<number, number>)
-          : {};
-      const todayTarget = goals[getWeekdayKey()] || baseTarget;
-      setTarget(todayTarget);
+    const baseTarget = targetRaw ? Number(targetRaw) || 108 : 108;
+    const goals = goalsRaw
+      ? (JSON.parse(goalsRaw) as Record<number, number>)
+      : {};
+    const todayTarget = goals[getWeekdayKey()] || baseTarget;
+    setTarget(todayTarget);
 
-      if (countRaw) setCount(Number(countRaw) || 0);
-      if (mantraRaw) setMantraName(mantraRaw);
-      if (activeRaw) setSessionActive(activeRaw === 'true');
-      if (malaRaw) setMalaCount(Number(malaRaw) || 0);
-      if (hintRaw === 'true') setShowTapHint(false);
-    };
-
-    loadState();
+    setCount(countRaw ? Number(countRaw) || 0 : 0);
+    setMantraName(mantraRaw || 'Naam');
+    setSessionActive(activeRaw === 'true');
+    setMalaCount(malaRaw ? Number(malaRaw) || 0 : 0);
+    setShowTapHint(hintRaw !== 'true');
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadState();
+    }, [loadState]),
+  );
 
   useEffect(() => {
     AsyncStorage.setItem(STORAGE_KEYS.count, String(count));
