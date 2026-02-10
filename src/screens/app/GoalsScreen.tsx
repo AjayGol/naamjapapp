@@ -5,6 +5,7 @@ import {
   Pressable,
   Switch,
   Modal,
+  Platform,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -223,7 +224,7 @@ export const GoalsScreen: React.FC = () => {
         </View>
       </Modal>
 
-      {showTimePicker ? (
+      {Platform.OS === 'android' && showTimePicker ? (
         <DateTimePicker
           value={reminderTime}
           mode="time"
@@ -236,6 +237,39 @@ export const GoalsScreen: React.FC = () => {
             }
           }}
         />
+      ) : null}
+
+      {Platform.OS === 'ios' ? (
+        <Modal visible={showTimePicker} transparent animationType="slide">
+          <Pressable style={styles.timeBackdrop} onPress={() => setShowTimePicker(false)}>
+            <Pressable style={[styles.timeSheet, { backgroundColor: colors.surface }]} onPress={() => {}}>
+              <View style={styles.timeHeader}>
+                <Pressable onPress={() => setShowTimePicker(false)}>
+                  <Text color="textSecondary">Cancel</Text>
+                </Pressable>
+                <Text weight="semibold">Select time</Text>
+                <Pressable
+                  onPress={() => {
+                    setShowTimePicker(false);
+                    void saveReminder(reminderEnabled, reminderTime);
+                  }}
+                >
+                  <Text color="primary">Done</Text>
+                </Pressable>
+              </View>
+              <DateTimePicker
+                value={reminderTime}
+                mode="time"
+                display="spinner"
+                onChange={(event, date) => {
+                  if (date) {
+                    setReminderTime(date);
+                  }
+                }}
+              />
+            </Pressable>
+          </Pressable>
+        </Modal>
       ) : null}
     </Screen>
   );
@@ -279,6 +313,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+  },
+  timeBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    justifyContent: 'flex-end',
+  },
+  timeSheet: {
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+    paddingBottom: 12,
+    paddingHorizontal: 12,
+  },
+  timeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
   },
   modalBackdrop: {
     flex: 1,

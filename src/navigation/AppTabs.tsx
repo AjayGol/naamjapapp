@@ -7,6 +7,7 @@ import { StatsScreen } from '../screens/app/StatsScreen';
 import { SettingsScreen } from '../screens/app/SettingsScreen';
 import { useTheme } from '../hooks/useTheme';
 import { Icon } from '../components/Icon';
+import {Platform} from "react-native";
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
 
@@ -17,7 +18,12 @@ export const AppTabs: React.FC = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarStyle: { backgroundColor: colors.background, borderTopColor: colors.border },
+        tabBarStyle: {
+          backgroundColor: colors.background,
+          borderTopColor: colors.border,
+          height: Platform.OS === 'ios' ? 75 : 60,
+          paddingBottom: 10,
+        },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: isDark ? colors.border : '#888888',
         tabBarIcon: ({ color, size }) => {
