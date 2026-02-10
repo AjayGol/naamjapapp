@@ -263,8 +263,21 @@ export const HomeScreen: React.FC = () => {
               <View style={styles.heroContinueRow}>
                 <View style={styles.heroContinueText}>
                   <Text weight="semibold">Continue your session</Text>
-                  <Text variant="xs" color="textSecondary">
-                    {activeMantra || 'Your mantra'} · {target - count} left
+                  <Text
+                    variant="xs"
+                    color="textSecondary"
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
+                    {activeMantra || 'Your mantra'}
+                  </Text>
+                  <Text
+                    variant="xs"
+                    color="textSecondary"
+                    numberOfLines={2}
+                    ellipsizeMode="tail"
+                  >
+                    {target - count} left
                   </Text>
                 </View>
                 <Button
@@ -424,7 +437,12 @@ export const HomeScreen: React.FC = () => {
                 <Text variant="xs" color="textSecondary">
                   Current Naam
                 </Text>
-                <Text variant="lg" weight="bold">
+                <Text
+                  variant="lg"
+                  weight="bold"
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
                   {activeMantra || 'Select Naam'}
                 </Text>
                 <View style={styles.selectMeta}>
