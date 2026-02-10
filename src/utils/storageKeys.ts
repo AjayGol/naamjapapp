@@ -16,6 +16,7 @@ export const STORAGE_KEYS = {
   dailyGoals: 'naamjap.dailyGoals',
   reminderEnabled: 'naamjap.reminderEnabled',
   reminderTime: 'naamjap.reminderTime',
+  onboardingDone: 'naamjap.onboardingDone',
   focusTimer: 'naamjap.focusTimer',
   currentMood: 'naamjap.currentMood',
 };

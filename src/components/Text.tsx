@@ -4,7 +4,7 @@ import { useTheme } from '../hooks/useTheme';
 
 export type TextVariant = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'title';
 export type TextWeight = 'regular' | 'medium' | 'semibold' | 'bold';
-export type TextColor = 'primary' | 'secondary' | 'textPrimary' | 'textSecondary' | 'accent' | 'error';
+export type TextColor = 'primary' | 'secondary' | 'textPrimary' | 'textSecondary' | 'accent' | 'error' | 'surface';
 
 export type TextProps = RNTextProps & {
   variant?: TextVariant;

@@ -25,4 +25,5 @@ export type AppStackParamList = {
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   App: NavigatorScreenParams<AppStackParamList>;
+  Onboarding: undefined;
 };
