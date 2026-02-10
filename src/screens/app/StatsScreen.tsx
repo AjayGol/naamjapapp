@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppHeader, Screen, Text, Divider } from '../../components';
+import { AppHeader, Screen, Text, Divider, Icon } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
 import { STORAGE_KEYS } from '../../utils/storageKeys';
 import {
@@ -24,13 +24,14 @@ export const StatsScreen: React.FC = () => {
   const { colors } = useTheme();
   const [period, setPeriod] = useState<Period>('weekly');
   const [dailyCounts, setDailyCounts] = useState<Record<string, number>>({});
+  const [malaCount, setMalaCount] = useState(0);
+  const [anchorDate, setAnchorDate] = useState(() => new Date());
 
-  const getCurrentWeekDates = useCallback(() => {
-    const today = new Date();
-    const day = today.getDay(); // 0=Sun, 1=Mon, ...
+  const getCurrentWeekDates = useCallback((baseDate: Date) => {
+    const day = baseDate.getDay(); // 0=Sun, 1=Mon, ...
     const diffToMonday = (day + 6) % 7;
-    const start = new Date(today);
-    start.setDate(today.getDate() - diffToMonday);
+    const start = new Date(baseDate);
+    start.setDate(baseDate.getDate() - diffToMonday);
     const dates: string[] = [];
     for (let i = 0; i < 7; i += 1) {
       const d = new Date(start);
@@ -40,10 +41,9 @@ export const StatsScreen: React.FC = () => {
     return dates;
   }, []);
 
-  const getCurrentMonthDates = useCallback(() => {
-    const today = new Date();
-    const start = new Date(today.getFullYear(), today.getMonth(), 1);
-    const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+  const getCurrentMonthDates = useCallback((baseDate: Date) => {
+    const start = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+    const end = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0);
     const daysInMonth = end.getDate();
     const dates: string[] = [];
     for (let i = 0; i < daysInMonth; i += 1) {
@@ -54,18 +54,67 @@ export const StatsScreen: React.FC = () => {
     return dates;
   }, []);
 
+  const getWeekStart = useCallback((date: Date) => {
+    const day = date.getDay();
+    const diffToMonday = (day + 6) % 7;
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(date.getDate() - diffToMonday);
+    return start;
+  }, []);
+
   const load = useCallback(async () => {
-    const raw = await AsyncStorage.getItem(STORAGE_KEYS.dailyCounts);
+    const [raw, malaRaw] = await Promise.all([
+      AsyncStorage.getItem(STORAGE_KEYS.dailyCounts),
+      AsyncStorage.getItem(STORAGE_KEYS.malaCount),
+    ]);
     setDailyCounts(raw ? (JSON.parse(raw) as Record<string, number>) : {});
+    setMalaCount(malaRaw ? Number(malaRaw) || 0 : 0);
   }, []);
 
   useEffect(() => {
     load();
   }, [load]);
 
+  useEffect(() => {
+    setAnchorDate(new Date());
+  }, [period]);
+
+  const canGoNext = useMemo(() => {
+    const today = new Date();
+    if (period === 'weekly') {
+      return getWeekStart(anchorDate).getTime() < getWeekStart(today).getTime();
+    }
+    if (period === 'monthly') {
+      return (
+        anchorDate.getFullYear() < today.getFullYear() ||
+        (anchorDate.getFullYear() === today.getFullYear() &&
+          anchorDate.getMonth() < today.getMonth())
+      );
+    }
+    return false;
+  }, [anchorDate, getWeekStart, period]);
+
+  const shiftPeriod = useCallback(
+    (direction: -1 | 1) => {
+      setAnchorDate(prev => {
+        const next = new Date(prev);
+        if (period === 'weekly') {
+          next.setDate(prev.getDate() + direction * 7);
+        } else if (period === 'monthly') {
+          next.setMonth(prev.getMonth() + direction);
+        } else {
+          return prev;
+        }
+        return next;
+      });
+    },
+    [period],
+  );
+
   const { bars, total, avg, rangeLabel } = useMemo(() => {
     if (period === 'weekly') {
-      const dates = getCurrentWeekDates();
+      const dates = getCurrentWeekDates(anchorDate);
       const barsData = dates.map(key => ({
         label: `${new Date(key).getDate()}\n${new Date(key).toLocaleString('en-US', { weekday: 'short' })}`,
         value: dailyCounts[key] || 0,
@@ -80,14 +129,13 @@ export const StatsScreen: React.FC = () => {
     }
 
     if (period === 'monthly') {
-      const dates = getCurrentMonthDates();
+      const dates = getCurrentMonthDates(anchorDate);
       const barsData = dates.map((key, index) => ({
-        label: index % 3 === 0 ? new Date(key).getDate().toString() : '',
+        label: index % 5 === 0 ? new Date(key).getDate().toString() : '',
         value: dailyCounts[key] || 0,
       }));
       const totalValue = barsData.reduce((sum, item) => sum + item.value, 0);
-      const today = new Date();
-      const rangeLabel = today.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+      const rangeLabel = anchorDate.toLocaleString('en-US', { month: 'long', year: 'numeric' });
       return {
         bars: barsData,
         total: totalValue,
@@ -96,8 +144,8 @@ export const StatsScreen: React.FC = () => {
       };
     }
 
-    const today = new Date();
-    const startYear = today.getFullYear() - 2;
+    const currentYear = new Date().getFullYear();
+    const startYear = currentYear - 2;
     const yearTotals: BarPoint[] = Array.from({ length: 3 }, (_, index) => ({
       label: String(startYear + index),
       value: 0,
@@ -111,6 +159,14 @@ export const StatsScreen: React.FC = () => {
       }
     });
 
+    // If the current year has data, keep older years at zero to focus on recent activity.
+    const currentYearIndex = yearTotals.length - 1;
+    if (yearTotals[currentYearIndex].value > 0) {
+      for (let i = 0; i < currentYearIndex; i += 1) {
+        yearTotals[i].value = 0;
+      }
+    }
+
     const totalValue = yearTotals.reduce((sum, item) => sum + item.value, 0);
     return {
       bars: yearTotals,
@@ -118,14 +174,14 @@ export const StatsScreen: React.FC = () => {
       avg: Math.round(totalValue / 3),
       rangeLabel: `${startYear} - ${startYear + 2}`,
     };
-  }, [dailyCounts, period]);
+  }, [anchorDate, dailyCounts, getCurrentMonthDates, getCurrentWeekDates, period]);
 
   const maxValue = Math.max(1, ...bars.map(item => item.value));
   const barCount = bars.length;
   const barWidth =
-    barCount >= 24 ? 8 : barCount >= 16 ? 12 : barCount >= 10 ? 18 : 26;
+    barCount >= 28 ? 6 : barCount >= 24 ? 8 : barCount >= 16 ? 12 : barCount >= 10 ? 18 : 26;
   const spacing =
-    barCount >= 24 ? 6 : barCount >= 16 ? 10 : barCount >= 10 ? 14 : 18;
+    barCount >= 28 ? 6 : barCount >= 24 ? 8 : barCount >= 16 ? 10 : barCount >= 10 ? 14 : 18;
   const minHeight = 6;
   const hasData = total > 0;
   const chartData = bars.map(item => {
@@ -141,7 +197,32 @@ export const StatsScreen: React.FC = () => {
 
   return (
     <Screen>
-      <AppHeader title="Naam Jap Stats" />
+      <AppHeader
+        title="Naam Jap Stats"
+        right={
+          <View style={styles.headerArrows}>
+            <Pressable
+              onPress={() => shiftPeriod(-1)}
+              style={({ pressed }) => [
+                styles.arrowButton,
+                { opacity: pressed ? 0.6 : 1 },
+              ]}
+            >
+              <Icon iconSet="MaterialIcons" iconName="chevron-left" size={24} color={colors.textPrimary} />
+            </Pressable>
+            <Pressable
+              onPress={() => shiftPeriod(1)}
+              disabled={!canGoNext}
+              style={({ pressed }) => [
+                styles.arrowButton,
+                { opacity: canGoNext ? (pressed ? 0.6 : 1) : 0.3 },
+              ]}
+            >
+              <Icon iconSet="MaterialIcons" iconName="chevron-right" size={24} color={colors.textPrimary} />
+            </Pressable>
+          </View>
+        }
+      />
       <Divider style={styles.divider} />
 
       <View
@@ -228,15 +309,17 @@ export const StatsScreen: React.FC = () => {
             hideYAxisText
             yAxisThickness={0}
             xAxisThickness={0}
-            xAxisTextNumberOfLines={2}
+            xAxisTextNumberOfLines={period === 'weekly' ? 2 : 1}
             xAxisLabelTextStyle={{
               color: colors.textSecondary,
-              fontSize: 11,
+              fontSize: period === 'monthly' ? 10 : 11,
               textAlign: 'center',
-              lineHeight: 14,
+              lineHeight: period === 'weekly' ? 14 : 12,
             }}
-            xAxisLabelsHeight={40}
-            disableScroll={barCount <= 10}
+            xAxisLabelsHeight={period === 'weekly' ? 40 : 34}
+            xAxisLabelsVerticalShift={period === 'monthly' ? 15 : period === 'yearly' ? 18 : 0}
+            labelWidth={period === 'yearly' ? 40 : period === 'monthly' ? 22 : 28}
+            disableScroll
             showScrollIndicator={false}
             barBorderRadius={12}
             frontColor={colors.primary}
@@ -258,6 +341,10 @@ export const StatsScreen: React.FC = () => {
           </View>
         )}
       </View>
+
+      <Text variant="sm" weight="semibold" style={styles.bottomLine}>
+        Count: {total} | Malas: {malaCount}
+      </Text>
     </Screen>
   );
 };
@@ -303,6 +390,18 @@ const styles = StyleSheet.create({
     minHeight: 220,
     justifyContent: 'center',
   },
+  headerArrows: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  arrowButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   emptyState: {
     alignItems: 'center',
     gap: 10,
@@ -313,5 +412,9 @@ const styles = StyleSheet.create({
     width: '65%',
     borderRadius: 999,
     opacity: Platform.OS === 'android' ? 0.6 : 0.4,
+  },
+  bottomLine: {
+    textAlign: 'center',
+    marginTop: 14,
   },
 });
