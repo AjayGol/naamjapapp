@@ -37,7 +37,7 @@ export const HomeScreen: React.FC = () => {
   const [history, setHistory] = useState<SessionEntry[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderTimeLabel, setReminderTimeLabel] = useState('');
+  const [reminderSummary, setReminderSummary] = useState('Select time');
   const completedDate =
     lastCompletedAt && !Number.isNaN(new Date(lastCompletedAt).getTime())
       ? new Date(lastCompletedAt).toDateString()
@@ -56,6 +56,9 @@ export const HomeScreen: React.FC = () => {
       favoritesRaw,
       dailyGoalsRaw,
       reminderEnabledRaw,
+      reminderModeRaw,
+      reminderIntervalRaw,
+      reminderCustomTimesRaw,
       reminderTimeRaw,
     ] = await Promise.all([
       AsyncStorage.getItem(STORAGE_KEYS.count),
@@ -69,6 +72,9 @@ export const HomeScreen: React.FC = () => {
       AsyncStorage.getItem(STORAGE_KEYS.favoriteMantras),
       AsyncStorage.getItem(STORAGE_KEYS.dailyGoals),
       AsyncStorage.getItem(STORAGE_KEYS.reminderEnabled),
+      AsyncStorage.getItem(STORAGE_KEYS.reminderMode),
+      AsyncStorage.getItem(STORAGE_KEYS.reminderInterval),
+      AsyncStorage.getItem(STORAGE_KEYS.reminderCustomTimes),
       AsyncStorage.getItem(STORAGE_KEYS.reminderTime),
     ]);
 
@@ -91,19 +97,39 @@ export const HomeScreen: React.FC = () => {
     setStreaks(getStreaks(counts));
     setHistory(historyRaw ? (JSON.parse(historyRaw) as SessionEntry[]) : []);
     setFavorites(favoritesRaw ? (JSON.parse(favoritesRaw) as string[]) : []);
-    setReminderEnabled(reminderEnabledRaw === 'true');
-    if (reminderTimeRaw) {
-      const [h, m] = reminderTimeRaw.split(':').map(Number);
+    const enabled = reminderEnabledRaw === 'true';
+    setReminderEnabled(enabled);
+    const formatTime = (hour: number, minute: number) => {
       const date = new Date();
-      date.setHours(h || 8, m || 0, 0, 0);
-      setReminderTimeLabel(
-        date.toLocaleTimeString('en-US', {
-          hour: 'numeric',
-          minute: '2-digit',
-        }),
+      date.setHours(hour, minute, 0, 0);
+      return date.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+    };
+    if (!enabled) {
+      setReminderSummary('Select time');
+    } else if (reminderModeRaw === 'custom') {
+      const parsed = reminderCustomTimesRaw
+        ? (JSON.parse(reminderCustomTimesRaw) as Array<{ hour: number; minute: number }>)
+        : [];
+      if (parsed.length) {
+        const first = formatTime(parsed[0].hour, parsed[0].minute);
+        const suffix = parsed.length > 1 ? ` +${parsed.length - 1}` : '';
+        setReminderSummary(`${first}${suffix}`);
+      } else {
+        setReminderSummary('Custom times');
+      }
+    } else if (reminderModeRaw === 'interval') {
+      const interval = reminderIntervalRaw ? Number(reminderIntervalRaw) : 0;
+      setReminderSummary(
+        interval ? `Every ${interval} minutes` : 'Interval reminders',
       );
+    } else if (reminderTimeRaw) {
+      const [h, m] = reminderTimeRaw.split(':').map(Number);
+      setReminderSummary(formatTime(h || 8, m || 0));
     } else {
-      setReminderTimeLabel('');
+      setReminderSummary('Select time');
     }
   }, []);
 
@@ -312,10 +338,7 @@ export const HomeScreen: React.FC = () => {
                 />
               </View>
               <Text variant="xs" color="textSecondary">
-                Today goal {target}
-                {reminderEnabled && reminderTimeLabel
-                  ? ` · Reminder ${reminderTimeLabel}`
-                  : ''}
+                {reminderEnabled ? `Reminder ${reminderSummary}` : 'Select time'}
               </Text>
             </View>
           </Pressable>

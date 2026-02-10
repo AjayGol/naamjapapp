@@ -9,268 +9,635 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppHeader, Screen, Text, Divider, Icon, TextInput, Button } from '../../components';
+import {
+  AppHeader,
+  Screen,
+  Text,
+  Divider,
+  Icon,
+  Button,
+} from '../../components';
 import { useTheme } from '../../hooks/useTheme';
 import { STORAGE_KEYS } from '../../utils/storageKeys';
 import {
-  cancelDailyReminder,
-  scheduleDailyReminder,
+  cancelCustomTimeReminders,
+  cancelIntervalReminders,
+  scheduleIntervalReminders,
+  scheduleCustomTimeReminders,
+  type ReminderWindow,
+  type ReminderTime,
 } from '../../services/notifications';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../../navigation/types';
 
+type WindowOption = {
+  id: string;
+  label: string;
+  startHour: number;
+  startMinute: number;
+  endHour: number;
+  endMinute: number;
+};
+
 export const GoalsScreen: React.FC = () => {
   const { colors } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<AppStackParamList>>();
-  const [reminderEnabled, setReminderEnabled] = useState(false);
-  const [reminderTime, setReminderTime] = useState(() => {
+  const intervalOptions = useMemo(() => [15, 30, 45, 60, 90, 120], []);
+  const windowOptions = useMemo<WindowOption[]>(
+    () => [
+      {
+        id: '6-9',
+        label: '6 am to 9 am',
+        startHour: 6,
+        startMinute: 0,
+        endHour: 9,
+        endMinute: 0,
+      },
+      {
+        id: '9-12',
+        label: '9 am to 12 pm',
+        startHour: 9,
+        startMinute: 0,
+        endHour: 12,
+        endMinute: 0,
+      },
+      {
+        id: '12-15',
+        label: '12 pm to 3 pm',
+        startHour: 12,
+        startMinute: 0,
+        endHour: 15,
+        endMinute: 0,
+      },
+      {
+        id: '15-18',
+        label: '3 pm to 6 pm',
+        startHour: 15,
+        startMinute: 0,
+        endHour: 18,
+        endMinute: 0,
+      },
+      {
+        id: '18-21',
+        label: '6 pm to 9 pm',
+        startHour: 18,
+        startMinute: 0,
+        endHour: 21,
+        endMinute: 0,
+      },
+      {
+        id: '21-24',
+        label: '9 pm to 12 am',
+        startHour: 21,
+        startMinute: 0,
+        endHour: 24,
+        endMinute: 0,
+      },
+      {
+        id: '0-4',
+        label: '12 am to 4 am',
+        startHour: 0,
+        startMinute: 0,
+        endHour: 4,
+        endMinute: 0,
+      },
+    ],
+    [],
+  );
+  const defaultActive = useMemo(
+    () => windowOptions.slice(0, 5).map(option => option.id),
+    [windowOptions],
+  );
+
+  const [reminderInterval, setReminderInterval] = useState(15);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [activeWindows, setActiveWindows] = useState<string[]>(defaultActive);
+  const [reminderMode, setReminderMode] = useState<'interval' | 'custom'>(
+    'interval',
+  );
+  const [intervalPickerVisible, setIntervalPickerVisible] = useState(false);
+  const [customTimePickerVisible, setCustomTimePickerVisible] = useState(false);
+  const [customTimeDraft, setCustomTimeDraft] = useState(() => {
     const date = new Date();
     date.setHours(8, 0, 0, 0);
     return date;
   });
-  const [showTimePicker, setShowTimePicker] = useState(false);
-  const [dailyGoals, setDailyGoals] = useState<Record<number, number>>({});
-  const [defaultGoal, setDefaultGoal] = useState(108);
-  const [goalModalVisible, setGoalModalVisible] = useState(false);
-  const [goalDay, setGoalDay] = useState<number | null>(null);
-  const [goalValue, setGoalValue] = useState('');
-  const [goalError, setGoalError] = useState('');
-
-  const weekDays = useMemo(
-    () => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-    [],
-  );
+  const [customTimes, setCustomTimes] = useState<ReminderTime[]>([]);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [statusError, setStatusError] = useState('');
 
   useEffect(() => {
     const load = async () => {
-      const [remEnabledRaw, remTimeRaw, goalsRaw, targetRaw] =
+      const [intervalRaw, windowsRaw, soundRaw, customTimesRaw, modeRaw] =
         await Promise.all([
-          AsyncStorage.getItem(STORAGE_KEYS.reminderEnabled),
-          AsyncStorage.getItem(STORAGE_KEYS.reminderTime),
-          AsyncStorage.getItem(STORAGE_KEYS.dailyGoals),
-          AsyncStorage.getItem(STORAGE_KEYS.target),
+          AsyncStorage.getItem(STORAGE_KEYS.reminderInterval),
+          AsyncStorage.getItem(STORAGE_KEYS.reminderActiveWindows),
+          AsyncStorage.getItem(STORAGE_KEYS.reminderSoundEnabled),
+          AsyncStorage.getItem(STORAGE_KEYS.reminderCustomTimes),
+          AsyncStorage.getItem(STORAGE_KEYS.reminderMode),
         ]);
 
-      if (remEnabledRaw) setReminderEnabled(remEnabledRaw === 'true');
-      if (remTimeRaw) {
-        const [h, m] = remTimeRaw.split(':').map(Number);
-        const date = new Date();
-        date.setHours(h || 8, m || 0, 0, 0);
-        setReminderTime(date);
-        if (remEnabledRaw === 'true') {
-          scheduleDailyReminder(date.getHours(), date.getMinutes());
+      if (intervalRaw) {
+        const parsed = Number(intervalRaw);
+        if (!Number.isNaN(parsed)) setReminderInterval(parsed);
+      }
+      if (windowsRaw) {
+        const parsed = JSON.parse(windowsRaw) as string[];
+        if (Array.isArray(parsed) && parsed.length) {
+          setActiveWindows(parsed);
+        }
+      } else {
+        setActiveWindows(defaultActive);
+      }
+      if (soundRaw) {
+        setSoundEnabled(soundRaw === 'true');
+      }
+      if (customTimesRaw) {
+        const parsed = JSON.parse(customTimesRaw) as ReminderTime[];
+        if (Array.isArray(parsed)) {
+          setCustomTimes(parsed);
         }
       }
-      if (goalsRaw) {
-        setDailyGoals(JSON.parse(goalsRaw) as Record<number, number>);
-      }
-      if (targetRaw) {
-        setDefaultGoal(Number(targetRaw) || 108);
+      if (modeRaw === 'custom' || modeRaw === 'interval') {
+        setReminderMode(modeRaw);
       }
     };
     load();
+  }, [defaultActive]);
+
+  const toggleWindow = useCallback((id: string) => {
+    setActiveWindows(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id],
+    );
   }, []);
 
-  const saveReminder = useCallback(
-    async (enabled: boolean, time = reminderTime) => {
-      setReminderEnabled(enabled);
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.reminderEnabled,
-        String(enabled),
-      );
-      const hh = String(time.getHours()).padStart(2, '0');
-      const mm = String(time.getMinutes()).padStart(2, '0');
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.reminderTime,
-        `${hh}:${mm}`,
-      );
-      if (enabled) {
-        scheduleDailyReminder(time.getHours(), time.getMinutes());
-      } else {
-        cancelDailyReminder();
-      }
-    },
-    [reminderTime],
-  );
-
-  const openGoalEditor = useCallback(
-    (dayIndex: number) => {
-      setGoalDay(dayIndex);
-      const current =
-        dayIndex === -1 ? defaultGoal : dailyGoals[dayIndex] || defaultGoal;
-      setGoalValue(String(current));
-      setGoalError('');
-      setGoalModalVisible(true);
-    },
-    [dailyGoals, defaultGoal],
-  );
-
-  const saveGoal = useCallback(async () => {
-    const value = Number(goalValue);
-    if (!value || value <= 0) {
-      setGoalError('Enter a valid number');
+  const handleSetReminder = useCallback(async () => {
+    setStatusMessage('');
+    setStatusError('');
+    if (reminderMode === 'interval' && !activeWindows.length) {
+      setStatusError('Select at least one active time block.');
       return;
     }
-    if (goalDay === null) return;
-    if (goalDay === -1) {
-      setDefaultGoal(value);
-      await AsyncStorage.setItem(STORAGE_KEYS.target, String(value));
-    } else {
-      const next = { ...dailyGoals, [goalDay]: value };
-      setDailyGoals(next);
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.dailyGoals,
-        JSON.stringify(next),
-      );
+    if (reminderMode === 'custom' && !customTimes.length) {
+      setStatusError('Add at least one custom time.');
+      return;
     }
-    setGoalModalVisible(false);
-  }, [dailyGoals, goalDay, goalValue]);
+
+    const storedIdsRaw = await AsyncStorage.getItem(STORAGE_KEYS.reminderIds);
+    if (storedIdsRaw) {
+      const storedIds = JSON.parse(storedIdsRaw) as string[];
+      if (Array.isArray(storedIds) && storedIds.length) {
+        await cancelIntervalReminders(storedIds);
+      }
+    }
+    const storedCustomIdsRaw = await AsyncStorage.getItem(
+      STORAGE_KEYS.reminderCustomIds,
+    );
+    if (storedCustomIdsRaw) {
+      const storedCustomIds = JSON.parse(storedCustomIdsRaw) as string[];
+      if (Array.isArray(storedCustomIds) && storedCustomIds.length) {
+        await cancelCustomTimeReminders(storedCustomIds);
+      }
+    }
+
+    let ids: string[] = [];
+    let customIds: string[] = [];
+    if (reminderMode === 'interval') {
+      const windows: ReminderWindow[] = windowOptions
+        .filter(option => activeWindows.includes(option.id))
+        .map(option => ({
+          startHour: option.startHour,
+          startMinute: option.startMinute,
+          endHour: option.endHour,
+          endMinute: option.endMinute,
+        }));
+
+      ids = await scheduleIntervalReminders(
+        reminderInterval,
+        windows,
+        soundEnabled,
+      );
+    } else if (reminderMode === 'custom') {
+      customIds = await scheduleCustomTimeReminders(customTimes, soundEnabled);
+    }
+
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.reminderInterval,
+      String(reminderInterval),
+    );
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.reminderActiveWindows,
+      JSON.stringify(activeWindows),
+    );
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.reminderSoundEnabled,
+      String(soundEnabled),
+    );
+    await AsyncStorage.setItem(STORAGE_KEYS.reminderIds, JSON.stringify(ids));
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.reminderCustomTimes,
+      JSON.stringify(customTimes),
+    );
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.reminderCustomIds,
+      JSON.stringify(customIds),
+    );
+    await AsyncStorage.setItem(STORAGE_KEYS.reminderMode, reminderMode);
+    await AsyncStorage.setItem(STORAGE_KEYS.reminderEnabled, 'true');
+
+    setStatusMessage('Reminders set successfully.');
+  }, [
+    activeWindows,
+    reminderInterval,
+    soundEnabled,
+    windowOptions,
+    customTimes,
+    reminderMode,
+  ]);
+
+  const handleStopReminder = useCallback(async () => {
+    setStatusMessage('');
+    setStatusError('');
+    const [storedIdsRaw, storedCustomIdsRaw] = await Promise.all([
+      AsyncStorage.getItem(STORAGE_KEYS.reminderIds),
+      AsyncStorage.getItem(STORAGE_KEYS.reminderCustomIds),
+    ]);
+    if (storedIdsRaw) {
+      const storedIds = JSON.parse(storedIdsRaw) as string[];
+      if (Array.isArray(storedIds) && storedIds.length) {
+        await cancelIntervalReminders(storedIds);
+      }
+    }
+    if (storedCustomIdsRaw) {
+      const storedCustomIds = JSON.parse(storedCustomIdsRaw) as string[];
+      if (Array.isArray(storedCustomIds) && storedCustomIds.length) {
+        await cancelCustomTimeReminders(storedCustomIds);
+      }
+    }
+    await AsyncStorage.setItem(STORAGE_KEYS.reminderEnabled, 'false');
+    setStatusMessage('Reminders turned off.');
+  }, []);
+
+  const addCustomTime = useCallback(() => {
+    const hour = customTimeDraft.getHours();
+    const minute = customTimeDraft.getMinutes();
+    const exists = customTimes.some(
+      item => item.hour === hour && item.minute === minute,
+    );
+    if (!exists) {
+      setCustomTimes(prev => [...prev, { hour, minute }]);
+    }
+    setCustomTimePickerVisible(false);
+  }, [customTimeDraft, customTimes]);
+
+  const removeCustomTime = useCallback((index: number) => {
+    setCustomTimes(prev => prev.filter((_, idx) => idx !== index));
+  }, []);
+
+  const formatTime = useCallback((time: ReminderTime) => {
+    const date = new Date();
+    date.setHours(time.hour, time.minute, 0, 0);
+    return date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }, []);
 
   return (
     <Screen>
       <AppHeader title="Goals & Reminders" onBack={() => navigation.goBack()} />
       <Divider style={styles.divider} />
 
-      <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+      <View
+        style={[
+          styles.sectionCard,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
+      >
         <View style={styles.sectionTitleRow}>
-          <Text weight="semibold">Daily goals</Text>
-          <Text variant="xs" color="textSecondary">
-            Schedule by day
-          </Text>
+          <Text weight="semibold">Reminder type</Text>
         </View>
-        <Pressable style={styles.rowItem} onPress={() => openGoalEditor(-1)}>
-          <View style={styles.rowLeft}>
-            <Icon iconSet="MaterialIcons" iconName="flag" size={20} color={colors.textSecondary} />
-            <Text>Default goal</Text>
-          </View>
-          <View style={styles.rowRight}>
-            <Text color="textSecondary">{defaultGoal}</Text>
-            <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
-          </View>
-        </Pressable>
-        {weekDays.map((day, index) => {
-          const value = dailyGoals[index] || defaultGoal;
-          return (
-            <View key={day}>
-              <Divider />
-              <Pressable style={styles.rowItem} onPress={() => openGoalEditor(index)}>
-                <View style={styles.rowLeft}>
-                  <Icon iconSet="MaterialIcons" iconName="today" size={20} color={colors.textSecondary} />
-                  <Text>{day}</Text>
-                </View>
-                <View style={styles.rowRight}>
-                  <Text color="textSecondary">{value}</Text>
-                  <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
-                </View>
-              </Pressable>
-            </View>
-          );
-        })}
-      </View>
-
-      <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <View style={styles.rowItem}>
-          <View style={styles.rowLeft}>
-            <Icon iconSet="MaterialIcons" iconName="notifications" size={20} color={colors.textSecondary} />
-            <Text>Quiet reminders</Text>
-          </View>
-          <Switch
-            value={reminderEnabled}
-            onValueChange={value => {
-              void saveReminder(value);
-            }}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor={colors.surface}
-          />
-        </View>
-        <Divider />
-        <Pressable style={styles.rowItem} onPress={() => setShowTimePicker(true)}>
-          <View style={styles.rowLeft}>
-            <Icon iconSet="MaterialIcons" iconName="schedule" size={20} color={colors.textSecondary} />
-            <Text>Reminder time</Text>
-          </View>
-          <View style={styles.rowRight}>
-            <Text color="textSecondary">
-              {reminderTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
-            </Text>
-            <Icon iconSet="MaterialIcons" iconName="expand-more" size={22} color={colors.textSecondary} />
-          </View>
-        </Pressable>
-      </View>
-
-      <Modal transparent animationType="fade" visible={goalModalVisible}>
-        <View style={styles.modalBackdrop}>
-          <View style={[styles.modalCard, { backgroundColor: colors.surface }]}>
-            <Text weight="semibold">Set goal</Text>
-            <TextInput
-              placeholder="Enter number"
-              value={goalValue}
-              onChangeText={text => {
-                setGoalValue(text.replace(/[^0-9]/g, ''));
-                if (goalError) setGoalError('');
+        <View style={styles.modeRow}>
+          <Pressable
+            style={[
+              styles.modeChip,
+              {
+                borderColor:
+                  reminderMode === 'interval' ? colors.primary : colors.border,
+                backgroundColor:
+                  reminderMode === 'interval' ? colors.primary : colors.surface,
+              },
+            ]}
+            onPress={() => setReminderMode('interval')}
+          >
+            <Text
+              variant="sm"
+              style={{
+                color:
+                  reminderMode === 'interval'
+                    ? colors.surface
+                    : colors.textPrimary,
               }}
-              keyboardType="number-pad"
-              error={goalError}
+            >
+              Interval
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[
+              styles.modeChip,
+              {
+                borderColor:
+                  reminderMode === 'custom' ? colors.primary : colors.border,
+                backgroundColor:
+                  reminderMode === 'custom' ? colors.primary : colors.surface,
+              },
+            ]}
+            onPress={() => setReminderMode('custom')}
+          >
+            <Text
+              variant="sm"
+              style={{
+                color:
+                  reminderMode === 'custom'
+                    ? colors.surface
+                    : colors.textPrimary,
+              }}
+            >
+              Custom times
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+
+      {reminderMode === 'interval' ? (
+        <View
+          style={[
+            styles.sectionCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <Pressable
+            style={[
+              styles.rowItem,
+              reminderMode !== 'interval' && styles.disabledRow,
+            ]}
+            onPress={() => setIntervalPickerVisible(true)}
+            disabled={reminderMode !== 'interval'}
+          >
+            <View style={styles.rowLeft}>
+              <Icon
+                iconSet="MaterialIcons"
+                iconName="timer"
+                size={20}
+                color={colors.textSecondary}
+              />
+              <Text>Reminder interval</Text>
+            </View>
+            <View style={styles.rowRight}>
+              <Text color="textSecondary">
+                Every {reminderInterval} minutes
+              </Text>
+              <Icon
+                iconSet="MaterialIcons"
+                iconName="expand-more"
+                size={22}
+                color={colors.textSecondary}
+              />
+            </View>
+          </Pressable>
+          <Divider />
+          <View
+            style={[
+              styles.rowItem,
+              reminderMode !== 'interval' && styles.disabledRow,
+            ]}
+          >
+            <View style={styles.rowLeft}>
+              <Icon
+                iconSet="MaterialIcons"
+                iconName="notifications"
+                size={20}
+                color={colors.textSecondary}
+              />
+              <Text>Notification sound</Text>
+            </View>
+            <Switch
+              value={soundEnabled}
+              onValueChange={value => {
+                setSoundEnabled(value);
+              }}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.surface}
             />
-            <Button label="Save" onPress={saveGoal} />
-            <Pressable onPress={() => setGoalModalVisible(false)}>
-              <Text variant="sm" color="textSecondary">
-                Cancel
+          </View>
+        </View>
+      ) : null}
+
+      {reminderMode === 'custom' ? (
+        <View
+          style={[
+            styles.sectionCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <View style={styles.sectionTitleRow}>
+            <Text weight="semibold">Custom reminder times</Text>
+            <Pressable onPress={() => setCustomTimePickerVisible(true)}>
+              <Text variant="sm" color={'primary'}>
+                Add time
               </Text>
             </Pressable>
           </View>
+          {customTimes.length ? (
+            <View style={styles.customTimesRow}>
+              {customTimes.map((time, index) => (
+                <View
+                  key={`${time.hour}-${time.minute}-${index}`}
+                  style={[
+                    styles.customTimeChip,
+                    {
+                      borderColor: colors.border,
+                      backgroundColor: colors.surface,
+                    },
+                  ]}
+                >
+                  <Text variant="sm">{formatTime(time)}</Text>
+                  <Pressable
+                    onPress={() => removeCustomTime(index)}
+                    disabled={reminderMode !== 'custom'}
+                  >
+                    <Icon
+                      iconSet="MaterialIcons"
+                      iconName="close"
+                      size={16}
+                      color={colors.textSecondary}
+                    />
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text
+              variant="sm"
+              color="textSecondary"
+              style={styles.emptyCustomText}
+            >
+              Add a specific time if you prefer exact reminders.
+            </Text>
+          )}
         </View>
+      ) : null}
+
+      {reminderMode === 'interval' ? (
+        <View
+          style={[
+            styles.sectionCard,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <View style={styles.sectionTitleRow}>
+            <Text weight="semibold">Daily active hours (IST)</Text>
+            <Icon
+              iconSet="MaterialIcons"
+              iconName="schedule"
+              size={18}
+              color={colors.textSecondary}
+            />
+          </View>
+          <View
+            style={[
+              styles.hoursCard,
+              {
+                backgroundColor: colors.background,
+                borderColor: colors.border,
+              },
+              reminderMode !== 'interval' && styles.disabledRow,
+            ]}
+          >
+            {windowOptions.map(option => {
+              const isSelected = activeWindows.includes(option.id);
+              return (
+                <Pressable
+                  key={option.id}
+                  style={[
+                    styles.hourChip,
+                    {
+                      borderColor: isSelected ? colors.primary : colors.border,
+                      backgroundColor: isSelected
+                        ? colors.primary
+                        : colors.surface,
+                    },
+                  ]}
+                  onPress={() => toggleWindow(option.id)}
+                  disabled={reminderMode !== 'interval'}
+                >
+                  <View style={styles.chipContent}>
+                    {isSelected ? (
+                      <Icon
+                        iconSet="MaterialIcons"
+                        iconName="check"
+                        size={14}
+                        color={colors.surface}
+                      />
+                    ) : null}
+                    <Text
+                      variant="sm"
+                      style={{
+                        color: isSelected ? colors.surface : colors.textPrimary,
+                      }}
+                    >
+                      {option.label}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
+
+      <Button label="Set Reminder" onPress={handleSetReminder} />
+      <Pressable style={styles.stopRow} onPress={handleStopReminder}>
+        <Text variant="sm" color="textSecondary">
+          Stop reminders
+        </Text>
+      </Pressable>
+
+      {statusMessage ? (
+        <Text variant="sm" color="textSecondary" style={styles.statusText}>
+          {statusMessage}
+        </Text>
+      ) : null}
+      {statusError ? (
+        <Text variant="sm" color="accent" style={styles.statusText}>
+          {statusError}
+        </Text>
+      ) : null}
+
+      <Modal transparent animationType="fade" visible={intervalPickerVisible}>
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setIntervalPickerVisible(false)}
+        >
+          <Pressable
+            style={[
+              styles.modalCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+            onPress={() => {}}
+          >
+            <Text weight="semibold">Choose interval</Text>
+            {intervalOptions.map(option => (
+              <Pressable
+                key={option}
+                style={styles.modalRow}
+                onPress={() => {
+                  setReminderInterval(option);
+                  setIntervalPickerVisible(false);
+                }}
+              >
+                <Text>Every {option} minutes</Text>
+                {reminderInterval === option ? (
+                  <Icon
+                    iconSet="MaterialIcons"
+                    iconName="check"
+                    size={18}
+                    color={colors.primary}
+                  />
+                ) : null}
+              </Pressable>
+            ))}
+          </Pressable>
+        </Pressable>
       </Modal>
 
-      {Platform.OS === 'android' && showTimePicker ? (
-        <DateTimePicker
-          value={reminderTime}
-          mode="time"
-          display="spinner"
-          onChange={(event, date) => {
-            setShowTimePicker(false);
-            if (date) {
-              setReminderTime(date);
-              void saveReminder(reminderEnabled, date);
-            }
-          }}
-        />
-      ) : null}
-
-      {Platform.OS === 'ios' ? (
-        <Modal visible={showTimePicker} transparent animationType="slide">
-          <Pressable style={styles.timeBackdrop} onPress={() => setShowTimePicker(false)}>
-            <Pressable style={[styles.timeSheet, { backgroundColor: colors.surface }]} onPress={() => {}}>
-              <View style={styles.timeHeader}>
-                <Pressable onPress={() => setShowTimePicker(false)}>
-                  <Text color="textSecondary">Cancel</Text>
-                </Pressable>
-                <Text weight="semibold">Select time</Text>
-                <Pressable
-                  onPress={() => {
-                    setShowTimePicker(false);
-                    void saveReminder(reminderEnabled, reminderTime);
-                  }}
-                >
-                  <Text color="primary">Done</Text>
-                </Pressable>
-              </View>
-              <DateTimePicker
-                value={reminderTime}
-                mode="time"
-                display="spinner"
-                onChange={(event, date) => {
-                  if (date) {
-                    setReminderTime(date);
-                  }
-                }}
-              />
-            </Pressable>
+      <Modal transparent animationType="fade" visible={customTimePickerVisible}>
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setCustomTimePickerVisible(false)}
+        >
+          <Pressable
+            style={[
+              styles.modalCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+            onPress={() => {}}
+          >
+            <Text weight="semibold">Pick a time</Text>
+            <DateTimePicker
+              value={customTimeDraft}
+              mode="time"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={(event, date) => {
+                if (date) setCustomTimeDraft(date);
+              }}
+            />
+            <Button label="Add time" onPress={addCustomTime} />
           </Pressable>
-        </Modal>
-      ) : null}
+        </Pressable>
+      </Modal>
     </Screen>
   );
 };
@@ -314,23 +681,68 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
   },
-  timeBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'flex-end',
-  },
-  timeSheet: {
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    paddingBottom: 12,
-    paddingHorizontal: 12,
-  },
-  timeHeader: {
+  modeRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    gap: 12,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+  },
+  modeChip: {
+    flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  hoursCard: {
+    borderWidth: 1,
+    borderRadius: 14,
+    padding: 12,
+    marginHorizontal: 8,
+    marginBottom: 12,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  hourChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  chipContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  customTimesRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+  },
+  customTimeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  emptyCustomText: {
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+  },
+  stopRow: {
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  statusText: {
+    textAlign: 'center',
+    marginTop: 8,
   },
   modalBackdrop: {
     flex: 1,
@@ -343,6 +755,18 @@ const styles = StyleSheet.create({
     width: '100%',
     borderRadius: 16,
     padding: 16,
-    gap: 12,
+    gap: 10,
+    borderWidth: 1,
+  },
+  modalRow: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 6,
+    paddingVertical: 6,
+  },
+  disabledRow: {
+    opacity: 0.5,
   },
 });
