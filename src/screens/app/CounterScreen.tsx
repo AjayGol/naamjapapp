@@ -24,7 +24,7 @@ export const CounterScreen: React.FC = () => {
       useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const [count, setCount] = useState(0);
   const [target, setTarget] = useState(108);
-  const [mantraName, setMantraName] = useState('Naam');
+  const [mantraName, setMantraName] = useState('');
   const [sessionActive, setSessionActive] = useState(false);
   const [toastVisible, setToastVisible] = useState(false);
   const [malaCount, setMalaCount] = useState(0);
@@ -64,7 +64,13 @@ export const CounterScreen: React.FC = () => {
     setTarget(todayTarget);
 
     setCount(countRaw ? Number(countRaw) || 0 : 0);
-    setMantraName(mantraRaw || 'Naam');
+    if (mantraRaw) {
+      setMantraName(mantraRaw);
+    } else {
+      const fallback = 'Radha Radha';
+      setMantraName(fallback);
+      AsyncStorage.setItem(STORAGE_KEYS.activeMantra, fallback);
+    }
     setSessionActive(activeRaw === 'true');
     setMalaCount(malaRaw ? Number(malaRaw) || 0 : 0);
     setShowTapHint(hintRaw !== 'true');
@@ -105,6 +111,10 @@ export const CounterScreen: React.FC = () => {
   }, []);
 
   const increment = useCallback(() => {
+    if (!mantraName.trim()) {
+      navigation.navigate('SelectNaam');
+      return;
+    }
     setCount(prev => {
       if (prev >= target) {
         return prev;
@@ -204,7 +214,7 @@ export const CounterScreen: React.FC = () => {
                 color={colors.primary}
             />
             <Text variant="sm" weight="semibold">
-              {mantraName}
+              {mantraName || 'Select Naam'}
             </Text>
             <Icon
                 iconSet="MaterialIcons"

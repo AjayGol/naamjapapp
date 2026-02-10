@@ -45,7 +45,14 @@ export const SelectNaamScreen: React.FC = () => {
     ]);
     const list = listRaw ? (JSON.parse(listRaw) as string[]) : DEFAULT_MANTRAS;
     setItems(list);
-    setSelected(activeRaw || list[0] || '');
+    if (activeRaw) {
+      setSelected(activeRaw);
+    } else if (list[0]) {
+      setSelected(list[0]);
+      AsyncStorage.setItem(STORAGE_KEYS.activeMantra, list[0]);
+    } else {
+      setSelected('');
+    }
     setFavorites(favoritesRaw ? (JSON.parse(favoritesRaw) as string[]) : []);
   }, []);
 
