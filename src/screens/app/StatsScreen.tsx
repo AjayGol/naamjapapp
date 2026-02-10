@@ -6,13 +6,14 @@ import { useTheme } from '../../hooks/useTheme';
 import { STORAGE_KEYS } from '../../utils/storageKeys';
 import {
   formatRangeLabel,
+  getLocalDateKey,
   getLastNDates,
   getLastNMonths,
 } from '../../utils/date';
 import { BarChart } from 'react-native-gifted-charts';
-import Svg, { Pattern, Rect } from 'react-native-svg';
+import { Platform } from 'react-native';
 
-type Period = 'daily' | 'weekly' | 'monthly' | 'yearly';
+type Period = 'weekly' | 'monthly' | 'yearly';
 
 type BarPoint = {
   label: string;
@@ -21,8 +22,37 @@ type BarPoint = {
 
 export const StatsScreen: React.FC = () => {
   const { colors } = useTheme();
-  const [period, setPeriod] = useState<Period>('daily');
+  const [period, setPeriod] = useState<Period>('weekly');
   const [dailyCounts, setDailyCounts] = useState<Record<string, number>>({});
+
+  const getCurrentWeekDates = useCallback(() => {
+    const today = new Date();
+    const day = today.getDay(); // 0=Sun, 1=Mon, ...
+    const diffToMonday = (day + 6) % 7;
+    const start = new Date(today);
+    start.setDate(today.getDate() - diffToMonday);
+    const dates: string[] = [];
+    for (let i = 0; i < 7; i += 1) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      dates.push(getLocalDateKey(d));
+    }
+    return dates;
+  }, []);
+
+  const getCurrentMonthDates = useCallback(() => {
+    const today = new Date();
+    const start = new Date(today.getFullYear(), today.getMonth(), 1);
+    const end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const daysInMonth = end.getDate();
+    const dates: string[] = [];
+    for (let i = 0; i < daysInMonth; i += 1) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      dates.push(getLocalDateKey(d));
+    }
+    return dates;
+  }, []);
 
   const load = useCallback(async () => {
     const raw = await AsyncStorage.getItem(STORAGE_KEYS.dailyCounts);
@@ -34,25 +64,10 @@ export const StatsScreen: React.FC = () => {
   }, [load]);
 
   const { bars, total, avg, rangeLabel } = useMemo(() => {
-    if (period === 'daily') {
-      const dates = getLastNDates(1);
-      const value = dailyCounts[dates[0]] || 0;
-      const label = new Date(dates[0]).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-      });
-      return {
-        bars: [{ label, value }],
-        total: value,
-        avg: value,
-        rangeLabel: new Date(dates[0]).toDateString(),
-      };
-    }
-
     if (period === 'weekly') {
-      const dates = getLastNDates(7);
+      const dates = getCurrentWeekDates();
       const barsData = dates.map(key => ({
-        label: new Date(key).toLocaleString('en-US', { weekday: 'short' }),
+        label: `${new Date(key).getDate()}\n${new Date(key).toLocaleString('en-US', { weekday: 'short' })}`,
         value: dailyCounts[key] || 0,
       }));
       const totalValue = barsData.reduce((sum, item) => sum + item.value, 0);
@@ -65,59 +80,54 @@ export const StatsScreen: React.FC = () => {
     }
 
     if (period === 'monthly') {
-      const dates = getLastNDates(30);
+      const dates = getCurrentMonthDates();
       const barsData = dates.map((key, index) => ({
-        label: index % 5 === 0 ? new Date(key).getDate().toString() : '',
+        label: index % 3 === 0 ? new Date(key).getDate().toString() : '',
         value: dailyCounts[key] || 0,
       }));
       const totalValue = barsData.reduce((sum, item) => sum + item.value, 0);
+      const today = new Date();
+      const rangeLabel = today.toLocaleString('en-US', { month: 'long', year: 'numeric' });
       return {
         bars: barsData,
         total: totalValue,
-        avg: Math.round(totalValue / 30),
-        rangeLabel: formatRangeLabel(dates[0], dates[dates.length - 1]),
+        avg: Math.round(totalValue / dates.length),
+        rangeLabel,
       };
     }
 
-    const months = getLastNMonths(12);
-    const monthTotals: BarPoint[] = months.map(month => ({
-      label: month.label,
+    const today = new Date();
+    const startYear = today.getFullYear() - 2;
+    const yearTotals: BarPoint[] = Array.from({ length: 3 }, (_, index) => ({
+      label: String(startYear + index),
       value: 0,
     }));
 
     Object.entries(dailyCounts).forEach(([key, value]) => {
-      const monthKey = key.slice(0, 7);
-      const index = months.findIndex(item => item.key === monthKey);
-      if (index >= 0) monthTotals[index].value += value;
+      const year = Number(key.slice(0, 4));
+      const index = year - startYear;
+      if (index >= 0 && index < yearTotals.length) {
+        yearTotals[index].value += value;
+      }
     });
 
-    const totalValue = monthTotals.reduce((sum, item) => sum + item.value, 0);
+    const totalValue = yearTotals.reduce((sum, item) => sum + item.value, 0);
     return {
-      bars: monthTotals,
+      bars: yearTotals,
       total: totalValue,
-      avg: Math.round(totalValue / 12),
-      rangeLabel: `${months[0].label} - ${months[months.length - 1].label}`,
+      avg: Math.round(totalValue / 3),
+      rangeLabel: `${startYear} - ${startYear + 2}`,
     };
   }, [dailyCounts, period]);
 
   const maxValue = Math.max(1, ...bars.map(item => item.value));
   const barCount = bars.length;
   const barWidth =
-    barCount > 24
-      ? 8
-      : barCount > 16
-      ? 10
-      : barCount > 10
-      ? 12
-      : barCount > 7
-      ? 14
-      : 18;
+    barCount >= 24 ? 8 : barCount >= 16 ? 12 : barCount >= 10 ? 18 : 26;
   const spacing =
-    barCount > 24 ? 6 : barCount > 16 ? 8 : barCount > 10 ? 10 : 12;
+    barCount >= 24 ? 6 : barCount >= 16 ? 10 : barCount >= 10 ? 14 : 18;
   const minHeight = 6;
   const hasData = total > 0;
-  const patternId = 'barTrackPattern';
-
   const chartData = bars.map(item => {
     const value = item.value || 0;
     const displayValue =
@@ -125,8 +135,7 @@ export const StatsScreen: React.FC = () => {
     return {
       value: displayValue,
       label: item.label || ' ',
-      frontColor: colors.accent,
-      showGradient: false,
+      frontColor: colors.text,
     };
   });
 
@@ -141,7 +150,7 @@ export const StatsScreen: React.FC = () => {
           { backgroundColor: colors.surface, borderColor: colors.border },
         ]}
       >
-        {(['daily', 'weekly', 'monthly', 'yearly'] as Period[]).map(item => {
+        {(['weekly', 'monthly', 'yearly'] as Period[]).map(item => {
           const active = period === item;
           return (
             <Pressable
@@ -204,49 +213,48 @@ export const StatsScreen: React.FC = () => {
           { backgroundColor: colors.surface, borderColor: colors.border },
         ]}
       >
-        <BarChart
-          data={chartData}
-          height={200}
-          barWidth={barWidth}
-          spacing={spacing}
-          initialSpacing={16}
-          endSpacing={16}
-          maxValue={maxValue}
-          minHeight={minHeight}
-          noOfSections={4}
-          hideRules
-          hideYAxisText
-          yAxisThickness={0}
-          xAxisThickness={0}
-          barBorderRadius={12}
-          xAxisLabelTextStyle={{ color: colors.textSecondary, fontSize: 11 }}
-          xAxisLabelsHeight={24}
-          disableScroll={false}
-          showScrollIndicator={false}
-          frontColor={colors.accent}
-          backgroundColor="transparent"
-          patternId={patternId}
-          barBackgroundPattern={() => (
-            <Svg>
-              <Pattern
-                id={patternId}
-                patternUnits="objectBoundingBox"
-                width="1"
-                height="1"
-              >
-                <Rect
-                  x="0"
-                  y="0"
-                  width="1"
-                  height="1"
-                  rx="0.5"
-                  ry="0.5"
-                  fill={colors.border}
-                />
-              </Pattern>
-            </Svg>
-          )}
-        />
+        {hasData ? (
+          <BarChart
+            data={chartData}
+            height={210}
+            barWidth={barWidth}
+            spacing={spacing}
+            initialSpacing={12}
+            endSpacing={12}
+            maxValue={maxValue}
+            minHeight={minHeight}
+            noOfSections={3}
+            hideRules
+            hideYAxisText
+            yAxisThickness={0}
+            xAxisThickness={0}
+            xAxisTextNumberOfLines={2}
+            xAxisLabelTextStyle={{
+              color: colors.textSecondary,
+              fontSize: 11,
+              textAlign: 'center',
+              lineHeight: 14,
+            }}
+            xAxisLabelsHeight={40}
+            disableScroll={barCount <= 10}
+            showScrollIndicator={false}
+            barBorderRadius={12}
+            frontColor={colors.text}
+            backgroundColor="transparent"
+          />
+        ) : (
+          <View style={styles.emptyState}>
+            <View
+              style={[
+                styles.emptyTrack,
+                { backgroundColor: colors.border },
+              ]}
+            />
+            <Text variant="sm" color="textSecondary">
+              No stats yet. Start a chant to see progress.
+            </Text>
+          </View>
+        )}
       </View>
     </Screen>
   );
@@ -288,7 +296,20 @@ const styles = StyleSheet.create({
     marginTop: 18,
     borderWidth: 1,
     borderRadius: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    minHeight: 220,
+    justifyContent: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 16,
+  },
+  emptyTrack: {
+    height: 6,
+    width: '65%',
+    borderRadius: 999,
+    opacity: Platform.OS === 'android' ? 0.6 : 0.4,
   },
 });
