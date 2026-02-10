@@ -1,4 +1,4 @@
-package com.naamjapapp
+package com.naamjap.dailymantra.radha
 
 import android.app.Application
 import com.facebook.react.PackageList

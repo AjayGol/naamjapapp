@@ -1,4 +1,4 @@
-package com.naamjapapp
+package com.naamjap.dailymantra.radha
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
