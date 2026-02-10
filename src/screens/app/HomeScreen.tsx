@@ -469,7 +469,7 @@ export const HomeScreen: React.FC = () => {
             <Divider />
             <View style={styles.selectActions}>
               <Button
-                label={sessionActive ? 'Continue Chanting' : 'Start Chanting'}
+                label={sessionActive ? 'Continue' : 'Start Chanting'}
                 onPress={sessionActive ? continueChanting : startChanting}
                 style={styles.selectPrimary}
               />

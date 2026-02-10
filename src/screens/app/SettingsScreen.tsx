@@ -175,32 +175,36 @@ export const SettingsScreen: React.FC = () => {
         {/*</View>*/}
 
         <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Pressable style={styles.rowItem} onPress={() => {}}>
+          <Pressable style={styles.rowItem} onPress={() => navigation.navigate('PrivacyPolicy')}>
             <View style={styles.rowLeft}>
               <Icon iconSet="MaterialIcons" iconName="policy" size={20} color={colors.textSecondary} />
               <Text>Privacy Policy</Text>
             </View>
+            <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
           </Pressable>
           <Divider />
-          <Pressable style={styles.rowItem} onPress={() => {}}>
+          <Pressable style={styles.rowItem} onPress={() => navigation.navigate('Terms')}>
             <View style={styles.rowLeft}>
               <Icon iconSet="MaterialIcons" iconName="gavel" size={20} color={colors.textSecondary} />
               <Text>Terms & Conditions</Text>
             </View>
+            <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
           </Pressable>
           <Divider />
-          <Pressable style={styles.rowItem} onPress={() => {}}>
+          <Pressable style={styles.rowItem} onPress={() => navigation.navigate('About')}>
             <View style={styles.rowLeft}>
               <Icon iconSet="MaterialIcons" iconName="person" size={20} color={colors.textSecondary} />
               <Text>About Me</Text>
             </View>
+            <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
           </Pressable>
           <Divider />
-          <Pressable style={styles.rowItem} onPress={() => {}}>
+          <Pressable style={styles.rowItem} onPress={() => navigation.navigate('Support')}>
             <View style={styles.rowLeft}>
               <Icon iconSet="MaterialIcons" iconName="support-agent" size={20} color={colors.textSecondary} />
               <Text>Support</Text>
             </View>
+            <Icon iconSet="MaterialIcons" iconName="chevron-right" size={22} color={colors.textSecondary} />
           </Pressable>
         </View>
 

@@ -16,6 +16,10 @@ export type AppStackParamList = {
   SelectNaam: undefined;
   History: undefined;
   Goals: undefined;
+  PrivacyPolicy: undefined;
+  Terms: undefined;
+  About: undefined;
+  Support: undefined;
 };
 
 export type RootStackParamList = {
