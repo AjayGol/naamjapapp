@@ -67,7 +67,7 @@ export const CounterScreen: React.FC = () => {
     if (mantraRaw) {
       setMantraName(mantraRaw);
     } else {
-      const fallback = 'Radha Radha';
+      const fallback = 'राधा';
       setMantraName(fallback);
       AsyncStorage.setItem(STORAGE_KEYS.activeMantra, fallback);
     }

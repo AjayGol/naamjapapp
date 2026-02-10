@@ -17,12 +17,22 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../../navigation/types';
 
 const DEFAULT_MANTRAS = [
-  'Radha Radha',
-  'Ram Ram',
+  'राधा',
+  'RADHA',
+  'राम',
+  'RAM',
+  'महादेव',
+  'MAHADEV',
+  'ॐ कृष्णाय वासुदेवाय हरये परमात्मने । \nप्रणत: क्लेशनाशाय गोविंदाय नमो नमः ॥',
+  'Om Krishnaya Vasudevaya Haraye Paramatmane Pranata: Kleshanashaya Govindaya Namo Namah',
+  'ॐ नमः शिवाय',
   'Om Namah Shivaya',
-  'Waheguru',
-  'Hare Krishna',
-  'Om',
+  'ॐ गं गणपतये नमः',
+  'Om Gan Ganapataye Namaha',
+  'Hare Krishna Hare Krishna Krishna Krishna Hare Hare, \nHare Rama Hare Rama Rama Rama Hare Hare',
+  'KRISHNA',
+  'SHIV',
+  'NARAYAN',
 ];
 
 export const SelectNaamScreen: React.FC = () => {
@@ -139,13 +149,13 @@ export const SelectNaamScreen: React.FC = () => {
         >
           <View style={styles.cardRow}>
             <View style={styles.cardLeft}>
-            <Text
-              weight="semibold"
-              color="textPrimary"
-              style={active ? { color: colors.surface } : undefined}
-            >
-              {item}
-            </Text>
+              <Text
+                weight="semibold"
+                color="textPrimary"
+                style={active ? { color: colors.surface } : undefined}
+              >
+                {item}
+              </Text>
             </View>
             <View style={styles.cardActions}>
               <Pressable
