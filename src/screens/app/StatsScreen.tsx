@@ -135,7 +135,7 @@ export const StatsScreen: React.FC = () => {
     return {
       value: displayValue,
       label: item.label || ' ',
-      frontColor: colors.text,
+      frontColor: colors.primary,
     };
   });
 
@@ -239,8 +239,10 @@ export const StatsScreen: React.FC = () => {
             disableScroll={barCount <= 10}
             showScrollIndicator={false}
             barBorderRadius={12}
-            frontColor={colors.text}
+            frontColor={colors.primary}
             backgroundColor="transparent"
+            isAnimated
+            animationDuration={700}
           />
         ) : (
           <View style={styles.emptyState}>
