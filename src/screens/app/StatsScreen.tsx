@@ -1,17 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import { View, StyleSheet, Pressable, useWindowDimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppHeader, Screen, Text, Divider, Icon } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
 import { STORAGE_KEYS } from '../../utils/storageKeys';
-import {
-  formatRangeLabel,
-  getLocalDateKey,
-  getLastNDates,
-  getLastNMonths,
-} from '../../utils/date';
+import { formatRangeLabel, getLocalDateKey } from '../../utils/date';
 import { BarChart } from 'react-native-gifted-charts';
-import { Platform } from 'react-native';
 
 type Period = 'weekly' | 'monthly' | 'yearly';
 
@@ -22,6 +16,7 @@ type BarPoint = {
 
 export const StatsScreen: React.FC = () => {
   const { colors } = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
   const [period, setPeriod] = useState<Period>('weekly');
   const [dailyCounts, setDailyCounts] = useState<Record<string, number>>({});
   const [malaCount, setMalaCount] = useState(0);
@@ -112,7 +107,7 @@ export const StatsScreen: React.FC = () => {
     [period],
   );
 
-  const { bars, total, avg, rangeLabel } = useMemo(() => {
+  const { bars, total, avg, rangeLabel, focusLabels } = useMemo(() => {
     if (period === 'weekly') {
       const dates = getCurrentWeekDates(anchorDate);
       const barsData = dates.map(key => ({
@@ -125,13 +120,22 @@ export const StatsScreen: React.FC = () => {
         total: totalValue,
         avg: Math.round(totalValue / 7),
         rangeLabel: formatRangeLabel(dates[0], dates[dates.length - 1]),
+        focusLabels: dates.map(key =>
+          `${new Date(key).getDate()} ${new Date(key).toLocaleString('en-US', { weekday: 'short' })}`,
+        ),
       };
     }
 
     if (period === 'monthly') {
       const dates = getCurrentMonthDates(anchorDate);
       const barsData = dates.map((key, index) => ({
-        label: index % 5 === 0 ? new Date(key).getDate().toString() : '',
+        label: (() => {
+          const dayNumber = index + 1;
+          if (dayNumber === 1 || dayNumber === 2) {
+            return String(dayNumber);
+          }
+          return dayNumber % 2 === 0 ? String(dayNumber) : '';
+        })(),
         value: dailyCounts[key] || 0,
       }));
       const totalValue = barsData.reduce((sum, item) => sum + item.value, 0);
@@ -141,6 +145,7 @@ export const StatsScreen: React.FC = () => {
         total: totalValue,
         avg: Math.round(totalValue / dates.length),
         rangeLabel,
+        focusLabels: dates.map((_, index) => String(index + 1)),
       };
     }
 
@@ -166,28 +171,158 @@ export const StatsScreen: React.FC = () => {
       total: totalValue,
       avg: Math.round(totalValue / yearTotals.length),
       rangeLabel: `${startYear} - ${currentYear}`,
+      focusLabels: yearTotals.map(item => item.label),
     };
   }, [anchorDate, dailyCounts, getCurrentMonthDates, getCurrentWeekDates, period]);
 
   const maxValue = Math.max(1, ...bars.map(item => item.value));
   const barCount = bars.length;
-  const barWidth =
-    barCount >= 28 ? 6 : barCount >= 24 ? 8 : barCount >= 16 ? 12 : barCount >= 10 ? 18 : 26;
-  const spacing =
-    barCount >= 28 ? 6 : barCount >= 24 ? 8 : barCount >= 16 ? 10 : barCount >= 10 ? 14 : 18;
+  const availableChartWidth = Math.max(260, screenWidth - 32);
+  const fitBarsToWidth = useCallback(
+    (
+      count: number,
+      initialSpacing: number,
+      endSpacing: number,
+      minBarWidth: number,
+      maxBarWidth: number,
+      minSpacing: number,
+      maxSpacing: number,
+    ) => {
+      if (count <= 1) {
+        return { barWidth: maxBarWidth, spacing: 0 };
+      }
+      const usableWidth = Math.max(
+        80,
+        availableChartWidth - initialSpacing - endSpacing,
+      );
+      const spacingAtMaxBar =
+        (usableWidth - count * maxBarWidth) / (count - 1);
+
+      if (spacingAtMaxBar >= minSpacing) {
+        return {
+          barWidth: Math.floor(maxBarWidth),
+          spacing: Math.floor(Math.min(maxSpacing, spacingAtMaxBar)),
+        };
+      }
+
+      const candidateBar =
+        (usableWidth - (count - 1) * minSpacing) / count;
+      const barWidth = Math.floor(
+        Math.max(minBarWidth, Math.min(maxBarWidth, candidateBar)),
+      );
+      const spacing = Math.floor(
+        Math.max(1, (usableWidth - count * barWidth) / (count - 1)),
+      );
+      return {
+        barWidth,
+        spacing: Math.max(1, Math.min(maxSpacing, spacing)),
+      };
+    },
+    [availableChartWidth],
+  );
   const minHeight = 0;
   const hasData = total > 0;
+  const isMonthly = period === 'monthly';
+  const chartHeight = period === 'weekly' ? 236 : isMonthly ? 224 : 216;
+  const chartInitialSpacing = period === 'weekly' ? 8 : isMonthly ? 6 : 12;
+  const chartEndSpacing = period === 'weekly' ? 8 : isMonthly ? 6 : 12;
+  const { barWidth, spacing } = useMemo(() => {
+    if (period === 'weekly') {
+      return fitBarsToWidth(
+        barCount,
+        chartInitialSpacing,
+        chartEndSpacing,
+        16,
+        24,
+        6,
+        14,
+      );
+    }
+    if (period === 'monthly') {
+      return fitBarsToWidth(
+        barCount,
+        chartInitialSpacing,
+        chartEndSpacing,
+        2,
+        5,
+        1,
+        4,
+      );
+    }
+    return fitBarsToWidth(
+      barCount,
+      chartInitialSpacing,
+      chartEndSpacing,
+      18,
+      30,
+      8,
+      24,
+    );
+  }, [
+    barCount,
+    chartEndSpacing,
+    chartInitialSpacing,
+    fitBarsToWidth,
+    period,
+  ]);
+  const labelWidth =
+    period === 'monthly'
+      ? Math.max(12, barWidth + spacing + 6)
+      : period === 'yearly'
+        ? 34
+        : 34;
+  const chartMaxValue = hasData
+    ? (() => {
+        if (maxValue <= 10) return 10;
+        if (maxValue <= 50) return 50;
+        if (maxValue <= 100) return 100;
+        if (maxValue <= 500) return Math.ceil(maxValue / 50) * 50;
+        if (maxValue <= 2000) return Math.ceil(maxValue / 100) * 100;
+        return Math.ceil(maxValue / 500) * 500;
+      })()
+    : 1;
   const chartData = bars.map(item => {
     return {
       value: item.value || 0,
       label: item.label || ' ',
-      frontColor: colors.primary,
+      frontColor: '#111111',
     };
   });
   const chartKey = useMemo(
     () => `${period}-${rangeLabel}-${bars.map(item => item.value).join(',')}`,
     [bars, period, rangeLabel],
   );
+  const focusedIndex = useMemo(() => {
+    if (hasData) {
+      const target = Math.max(...bars.map(item => item.value));
+      return Math.max(
+        0,
+        bars.findIndex(item => item.value === target),
+      );
+    }
+    if (period === 'weekly') {
+      const dates = getCurrentWeekDates(anchorDate);
+      const today = getLocalDateKey();
+      const idx = dates.indexOf(today);
+      return idx >= 0 ? idx : 0;
+    }
+    if (period === 'monthly') {
+      const today = new Date();
+      if (
+        today.getFullYear() === anchorDate.getFullYear() &&
+        today.getMonth() === anchorDate.getMonth()
+      ) {
+        return Math.max(0, today.getDate() - 1);
+      }
+      return 0;
+    }
+    const currentYear = new Date().getFullYear();
+    const startYear = currentYear - 4;
+    return Math.max(0, Math.min(4, currentYear - startYear));
+  }, [anchorDate, bars, getCurrentWeekDates, hasData, period]);
+  const focusedLabel = focusLabels[focusedIndex] || '';
+  const periodTitle =
+    period === 'weekly' ? 'Daily' : period === 'monthly' ? 'Monthly' : 'Yearly';
 
   return (
     <Screen>
@@ -239,44 +374,49 @@ export const StatsScreen: React.FC = () => {
               <Text
                 variant="sm"
                 weight="semibold"
-                color="textSecondary"
-                style={active ? { color: colors.surface } : undefined}
+                style={
+                  active
+                    ? [styles.periodTextActive, { color: colors.surface }]
+                    : [styles.periodText, { color: colors.textSecondary }]
+                }
               >
-                {item.charAt(0).toUpperCase() + item.slice(1)}
+                {item === 'weekly'
+                  ? 'Daily'
+                  : item.charAt(0).toUpperCase() + item.slice(1)}
               </Text>
             </Pressable>
           );
         })}
       </View>
 
-      <Text variant="sm" color="textSecondary" style={styles.rangeLabel}>
+      <Text variant="lg" color="textSecondary" style={styles.rangeLabel}>
         {rangeLabel}
       </Text>
 
-      <View style={styles.statsRow}>
+      <View style={styles.metricsRow}>
         <View
           style={[
-            styles.statsCard,
+            styles.metricItem,
             { backgroundColor: colors.surface, borderColor: colors.border },
           ]}
         >
-          <Text variant="lg" weight="bold">
+          <Text style={styles.metricValue}>
             {total}
           </Text>
-          <Text variant="sm" color="textSecondary">
+          <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
             Total Count
           </Text>
         </View>
         <View
           style={[
-            styles.statsCard,
+            styles.metricItem,
             { backgroundColor: colors.surface, borderColor: colors.border },
           ]}
         >
-          <Text variant="lg" weight="bold">
+          <Text style={styles.metricValue}>
             {avg}
           </Text>
-          <Text variant="sm" color="textSecondary">
+          <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
             Avg / {period === 'yearly' ? 'Year' : 'Day'}
           </Text>
         </View>
@@ -284,20 +424,20 @@ export const StatsScreen: React.FC = () => {
 
       <View
         style={[
-          styles.chartCard,
+          styles.chartSection,
           { backgroundColor: colors.surface, borderColor: colors.border },
         ]}
       >
-        {hasData ? (
+        <View style={styles.chartWrap}>
           <BarChart
             key={chartKey}
             data={chartData}
-            height={210}
+            height={chartHeight}
             barWidth={barWidth}
             spacing={spacing}
-            initialSpacing={12}
-            endSpacing={12}
-            maxValue={maxValue}
+            initialSpacing={chartInitialSpacing}
+            endSpacing={chartEndSpacing}
+            maxValue={chartMaxValue}
             minHeight={minHeight}
             noOfSections={3}
             hideRules
@@ -307,35 +447,25 @@ export const StatsScreen: React.FC = () => {
             xAxisTextNumberOfLines={period === 'weekly' ? 2 : 1}
             xAxisLabelTextStyle={{
               color: colors.textSecondary,
-              fontSize: period === 'monthly' ? 10 : 11,
+              fontSize: period === 'monthly' ? 10 : 12,
               textAlign: 'center',
-              lineHeight: period === 'weekly' ? 14 : 12,
+              lineHeight: period === 'weekly' ? 16 : 14,
             }}
-            xAxisLabelsHeight={period === 'weekly' ? 40 : 34}
-            xAxisLabelsVerticalShift={period === 'monthly' ? 15 : period === 'yearly' ? 18 : 0}
-            labelWidth={period === 'yearly' ? 30 : period === 'monthly' ? 22 : 28}
+            xAxisLabelsHeight={period === 'weekly' ? 46 : 36}
+            xAxisLabelsVerticalShift={period === 'monthly' ? 10 : period === 'yearly' ? 12 : 0}
+            labelWidth={labelWidth}
             disableScroll
             showScrollIndicator={false}
-            barBorderRadius={12}
-            frontColor={colors.primary}
+            barBorderRadius={14}
+            frontColor="#111111"
             backgroundColor="transparent"
             isAnimated={false}
           />
-        ) : (
-          <View style={styles.emptyState}>
-            <View
-              style={[
-                styles.emptyTrack,
-                { backgroundColor: colors.border },
-              ]}
-            />
-            <Text variant="sm" color="textSecondary">
-              No stats yet. Start a chant to see progress.
-            </Text>
-          </View>
-        )}
+        </View>
+        <Text style={[styles.focusedLabel, { color: colors.textSecondary }]}>
+          {focusedLabel || periodTitle}
+        </Text>
       </View>
-
       <Text variant="sm" weight="semibold" style={styles.bottomLine}>
         Count: {total} | Malas: {malaCount}
       </Text>
@@ -357,32 +487,57 @@ const styles = StyleSheet.create({
   periodButton: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
+    justifyContent: 'center',
+    paddingVertical: 10,
     borderRadius: 10,
   },
-  rangeLabel: {
-    marginTop: 12,
-    marginBottom: 16,
+  periodText: {
+    color: '#171717',
   },
-  statsRow: {
+  periodTextActive: {
+    color: '#111111',
+  },
+  rangeLabel: {
+    marginTop: 18,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  metricsRow: {
     flexDirection: 'row',
     gap: 12,
+    marginBottom: 14,
   },
-  statsCard: {
+  metricItem: {
     flex: 1,
+    alignItems: 'center',
     borderWidth: 1,
     borderRadius: 14,
-    padding: 14,
-    gap: 6,
+    paddingVertical: 14,
   },
-  chartCard: {
-    marginTop: 18,
+  metricValue: {
+    fontSize: 42,
+    lineHeight: 46,
+    fontWeight: '700',
+    color: '#111111',
+  },
+  metricLabel: {
+    marginTop: 6,
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: '600',
+  },
+  chartSection: {
+    marginTop: 6,
     borderWidth: 1,
     borderRadius: 16,
-    paddingVertical: 12,
     paddingHorizontal: 10,
-    minHeight: 220,
-    justifyContent: 'center',
+    paddingTop: 10,
+    paddingBottom: 12,
+    minHeight: 270,
+  },
+  chartWrap: {
+    minHeight: 248,
+    justifyContent: 'flex-end',
   },
   headerArrows: {
     flexDirection: 'row',
@@ -396,19 +551,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyState: {
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 16,
-  },
-  emptyTrack: {
-    height: 6,
-    width: '65%',
-    borderRadius: 999,
-    opacity: Platform.OS === 'android' ? 0.6 : 0.4,
+  focusedLabel: {
+    marginTop: 8,
+    textAlign: 'center',
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '600',
   },
   bottomLine: {
     textAlign: 'center',
-    marginTop: 14,
+    marginTop: 12,
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#111111',
   },
 });
