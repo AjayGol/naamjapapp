@@ -156,7 +156,7 @@ export const CounterScreen: React.FC = () => {
         data[sessionDateKey] = (data[sessionDateKey] || 0) + 1;
         AsyncStorage.setItem(STORAGE_KEYS.dailyCounts, JSON.stringify(data));
       });
-      Vibration.vibrate(10);
+      Vibration.vibrate(2);
       Animated.sequence([
         Animated.timing(countScale, {
           toValue: 1.08,
