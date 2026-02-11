@@ -177,7 +177,7 @@ export const StatsScreen: React.FC = () => {
 
   const maxValue = Math.max(1, ...bars.map(item => item.value));
   const barCount = bars.length;
-  const availableChartWidth = Math.max(260, screenWidth - 32);
+  const availableChartWidth = Math.max(240, screenWidth - 44);
   const fitBarsToWidth = useCallback(
     (
       count: number,
@@ -223,9 +223,10 @@ export const StatsScreen: React.FC = () => {
   const minHeight = 0;
   const hasData = total > 0;
   const isMonthly = period === 'monthly';
+  const monthlyEdgePadding = Math.max(12, Math.round(screenWidth * 0.03));
   const chartHeight = period === 'weekly' ? 236 : isMonthly ? 224 : 216;
-  const chartInitialSpacing = period === 'weekly' ? 8 : isMonthly ? 6 : 12;
-  const chartEndSpacing = period === 'weekly' ? 8 : isMonthly ? 6 : 12;
+  const chartInitialSpacing = period === 'weekly' ? 8 : isMonthly ? monthlyEdgePadding : 12;
+  const chartEndSpacing = period === 'weekly' ? 8 : isMonthly ? monthlyEdgePadding : 12;
   const { barWidth, spacing } = useMemo(() => {
     if (period === 'weekly') {
       return fitBarsToWidth(
@@ -243,10 +244,10 @@ export const StatsScreen: React.FC = () => {
         barCount,
         chartInitialSpacing,
         chartEndSpacing,
-        2,
+        3,
         5,
-        1,
-        4,
+        2,
+        8,
       );
     }
     return fitBarsToWidth(
@@ -267,7 +268,7 @@ export const StatsScreen: React.FC = () => {
   ]);
   const labelWidth =
     period === 'monthly'
-      ? Math.max(12, barWidth + spacing + 6)
+      ? 13
       : period === 'yearly'
         ? 34
         : 34;
@@ -530,7 +531,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     borderWidth: 1,
     borderRadius: 16,
-    paddingHorizontal: 10,
+    paddingHorizontal: 6,
     paddingTop: 10,
     paddingBottom: 12,
     minHeight: 270,
