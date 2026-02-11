@@ -1,5 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, StyleSheet, Pressable, Vibration, Animated } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Pressable,
+  Vibration,
+  Animated,
+  Modal,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Screen, Text, Divider, Icon, AppHeader } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
@@ -29,6 +36,7 @@ export const CounterScreen: React.FC = () => {
   const [toastVisible, setToastVisible] = useState(false);
   const [malaCount, setMalaCount] = useState(0);
   const [showTapHint, setShowTapHint] = useState(true);
+  const [showSwitchMantraModal, setShowSwitchMantraModal] = useState(false);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const progress = target > 0 ? Math.min(count / target, 1) : 0;
   const ringSize = 260;
@@ -193,6 +201,44 @@ export const CounterScreen: React.FC = () => {
     });
   }, [countScale, mantraName, target]);
 
+  const archiveCurrentSession = useCallback(async () => {
+    if (!mantraName.trim() || count <= 0) return;
+    const entry: SessionEntry = {
+      id: `${Date.now()}`,
+      mantra: mantraName,
+      count,
+      target,
+      completedAt: new Date().toISOString(),
+    };
+    const raw = await AsyncStorage.getItem(STORAGE_KEYS.sessionHistory);
+    const list = raw ? (JSON.parse(raw) as SessionEntry[]) : [];
+    const nextList = [entry, ...list].slice(0, 200);
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.sessionHistory,
+      JSON.stringify(nextList),
+    );
+  }, [count, mantraName, target]);
+
+  const handleRequestMantraChange = useCallback(() => {
+    if (count > 0) {
+      setShowSwitchMantraModal(true);
+      return;
+    }
+    navigation.navigate('SelectNaam');
+  }, [count, navigation]);
+
+  const handleConfirmMantraSwitch = useCallback(async () => {
+    await archiveCurrentSession();
+    setShowSwitchMantraModal(false);
+    setCount(0);
+    setSessionActive(false);
+    await Promise.all([
+      AsyncStorage.setItem(STORAGE_KEYS.count, '0'),
+      AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false'),
+    ]);
+    navigation.navigate('SelectNaam');
+  }, [archiveCurrentSession, navigation]);
+
   return (
     <Screen>
       <AppHeader title="Mantra Counter" />
@@ -200,7 +246,7 @@ export const CounterScreen: React.FC = () => {
       <Divider style={styles.divider} />
 
       <Pressable
-        onPress={() => navigation.navigate('SelectNaam')}
+        onPress={handleRequestMantraChange}
         style={styles.mantraHeader}
       >
         <Text variant="xs" color="textSecondary" style={styles.mantraLabel}>
@@ -340,6 +386,57 @@ export const CounterScreen: React.FC = () => {
           </Text>
         </View>
       ) : null}
+
+      <Modal
+        visible={showSwitchMantraModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowSwitchMantraModal(false)}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => setShowSwitchMantraModal(false)}
+        >
+          <Pressable
+            style={[
+              styles.modalCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+            onPress={() => {}}
+          >
+            <Text weight="semibold">Switch mantra?</Text>
+            <Text variant="sm" color="textSecondary" style={styles.modalText}>
+              Current progress ({count}) will be saved. New mantra starts from
+              0.
+            </Text>
+            <View style={styles.modalActions}>
+              <Pressable
+                style={[
+                  styles.modalButton,
+                  { borderColor: colors.border, backgroundColor: colors.surface },
+                ]}
+                onPress={() => setShowSwitchMantraModal(false)}
+              >
+                <Text variant="sm">Cancel</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.modalButton,
+                  {
+                    borderColor: colors.primary,
+                    backgroundColor: colors.primary,
+                  },
+                ]}
+                onPress={handleConfirmMantraSwitch}
+              >
+                <Text variant="sm" style={{ color: colors.surface }}>
+                  Switch & reset
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 };
@@ -444,5 +541,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  modalCard: {
+    width: '100%',
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  },
+  modalText: {
+    lineHeight: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  modalButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

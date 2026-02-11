@@ -70,7 +70,7 @@ export const HistoryScreen: React.FC = () => {
                 ]}
               >
                 <View style={styles.cardRow}>
-                  <Text weight="semibold">{item.mantra}</Text>
+                  <Text weight="semibold" numberOfLines={1}>{item.mantra}</Text>
                   <Text variant="xs" color="textSecondary">
                     {date.toDateString()}
                   </Text>
