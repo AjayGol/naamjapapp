@@ -185,13 +185,13 @@ export const HomeScreen: React.FC = () => {
             <Icon
               iconSet="MaterialIcons"
               iconName="self-improvement"
-              size={22}
+              size={20}
               color={colors.primary}
             />
           </View>
           <View style={styles.headerText}>
-            <Text variant="title" weight="bold">
-              Naam Jap
+            <Text variant="lg" weight="bold">
+              Naam Jap Daily
             </Text>
             <Text variant="sm" color="textSecondary">
               Calm, focused chanting
@@ -207,7 +207,7 @@ export const HomeScreen: React.FC = () => {
             <Icon
               iconSet="MaterialIcons"
               iconName="flag"
-              size={18}
+              size={17}
               color={colors.primary}
             />
           </Pressable>
@@ -286,7 +286,7 @@ export const HomeScreen: React.FC = () => {
               ) : null}
             </View>
             {sessionActive && count < target ? (
-              <View style={styles.heroContinueRow}>
+              <View style={[styles.heroContinueRow, { borderColor: colors.border }]}>
                 <View style={styles.heroContinueText}>
                   <Text weight="semibold">Continue your session</Text>
                   <Text
@@ -329,7 +329,7 @@ export const HomeScreen: React.FC = () => {
             />
             <View style={styles.goalsBody}>
               <View style={styles.goalsHeader}>
-                <Text weight="semibold">Goals & reminders</Text>
+            <Text weight="semibold">Goals & reminders</Text>
                 <Icon
                   iconSet="MaterialIcons"
                   iconName="chevron-right"
@@ -421,10 +421,10 @@ export const HomeScreen: React.FC = () => {
 
         <View style={styles.form}>
           <View style={styles.sectionHeader}>
-            <Text variant="sm" weight="semibold">
+            <Text style={styles.sectionTitle}>
               Choose mantra
             </Text>
-            <Text variant="xs" color="textSecondary">
+            <Text style={[styles.sectionAction, { color: colors.textSecondary }]}>
               Tap to change
             </Text>
           </View>
@@ -525,7 +525,7 @@ export const HomeScreen: React.FC = () => {
                     AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false'),
                   ]);
                 }}
-                style={styles.selectSecondary}
+                style={[styles.selectSecondary, { borderColor: colors.border }]}
               />
             </View>
           </View>
@@ -537,11 +537,11 @@ export const HomeScreen: React.FC = () => {
         </View>
 
         <View style={[styles.sectionHeader, { marginTop: 15 }]}>
-          <Text variant="sm" weight="semibold">
+          <Text style={styles.sectionTitle}>
             Recent sessions
           </Text>
           <Pressable onPress={() => stackNavigation.navigate('History')}>
-            <Text variant="xs" color="textSecondary">
+            <Text style={[styles.sectionAction, { color: colors.textSecondary }]}>
               View all
             </Text>
           </Pressable>
@@ -591,6 +591,7 @@ export const HomeScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
   content: {
+    paddingTop: 8,
     paddingBottom: 24,
   },
   header: {
@@ -602,21 +603,21 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   iconBadge: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerText: {
-    gap: 4,
+    gap: 3,
     flex: 1,
   },
   goalIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
@@ -625,7 +626,7 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   heroCard: {
-    borderRadius: 22,
+    borderRadius: 20,
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -662,7 +663,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderColor: 'rgba(0,0,0,0.06)',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -761,6 +761,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: '700',
+  },
+  sectionAction: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '500',
   },
   selectCard: {
     borderWidth: 1,
