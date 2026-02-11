@@ -13,6 +13,16 @@
       android:theme="@style/AppTheme"
       android:usesCleartextTraffic="${usesCleartextTraffic}"
       android:supportsRtl="true">
+      <service
+        android:name="app.notifee.core.ForegroundService"
+        android:exported="false"
+        android:foregroundServiceType="dataSync" />
+      <receiver
+        android:name="app.notifee.core.NotificationReceiver"
+        android:exported="false" />
+      <receiver
+        android:name="app.notifee.core.TriggerReceiver"
+        android:exported="false" />
       <activity
         android:name=".MainActivity"
         android:label="@string/app_name"

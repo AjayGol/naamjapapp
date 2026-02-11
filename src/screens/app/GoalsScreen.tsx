@@ -20,6 +20,7 @@ import {
 import { useTheme } from '../../hooks/useTheme';
 import { STORAGE_KEYS } from '../../utils/storageKeys';
 import {
+  configureNotifications,
   cancelCustomTimeReminders,
   cancelIntervalReminders,
   scheduleIntervalReminders,
@@ -185,69 +186,86 @@ export const GoalsScreen: React.FC = () => {
       return;
     }
 
-    const storedIdsRaw = await AsyncStorage.getItem(STORAGE_KEYS.reminderIds);
-    if (storedIdsRaw) {
-      const storedIds = JSON.parse(storedIdsRaw) as string[];
-      if (Array.isArray(storedIds) && storedIds.length) {
-        await cancelIntervalReminders(storedIds);
-      }
-    }
-    const storedCustomIdsRaw = await AsyncStorage.getItem(
-      STORAGE_KEYS.reminderCustomIds,
-    );
-    if (storedCustomIdsRaw) {
-      const storedCustomIds = JSON.parse(storedCustomIdsRaw) as string[];
-      if (Array.isArray(storedCustomIds) && storedCustomIds.length) {
-        await cancelCustomTimeReminders(storedCustomIds);
-      }
-    }
+    try {
+      await configureNotifications();
 
-    let ids: string[] = [];
-    let customIds: string[] = [];
-    if (reminderMode === 'interval') {
-      const windows: ReminderWindow[] = windowOptions
-        .filter(option => activeWindows.includes(option.id))
-        .map(option => ({
-          startHour: option.startHour,
-          startMinute: option.startMinute,
-          endHour: option.endHour,
-          endMinute: option.endMinute,
-        }));
-
-      ids = await scheduleIntervalReminders(
-        reminderInterval,
-        windows,
-        soundEnabled,
+      const storedIdsRaw = await AsyncStorage.getItem(
+        STORAGE_KEYS.reminderIds,
       );
-    } else if (reminderMode === 'custom') {
-      customIds = await scheduleCustomTimeReminders(customTimes, soundEnabled);
+      if (storedIdsRaw) {
+        const storedIds = JSON.parse(storedIdsRaw) as string[];
+        if (Array.isArray(storedIds) && storedIds.length) {
+          await cancelIntervalReminders(storedIds);
+        }
+      }
+      const storedCustomIdsRaw = await AsyncStorage.getItem(
+        STORAGE_KEYS.reminderCustomIds,
+      );
+      if (storedCustomIdsRaw) {
+        const storedCustomIds = JSON.parse(storedCustomIdsRaw) as string[];
+        if (Array.isArray(storedCustomIds) && storedCustomIds.length) {
+          await cancelCustomTimeReminders(storedCustomIds);
+        }
+      }
+
+      let ids: string[] = [];
+      let customIds: string[] = [];
+      if (reminderMode === 'interval') {
+        const windows: ReminderWindow[] = windowOptions
+          .filter(option => activeWindows.includes(option.id))
+          .map(option => ({
+            startHour: option.startHour,
+            startMinute: option.startMinute,
+            endHour: option.endHour,
+            endMinute: option.endMinute,
+          }));
+
+        ids = await scheduleIntervalReminders(
+          reminderInterval,
+          windows,
+          soundEnabled,
+        );
+      } else if (reminderMode === 'custom') {
+        customIds = await scheduleCustomTimeReminders(
+          customTimes,
+          soundEnabled,
+        );
+      }
+
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.reminderInterval,
+        String(reminderInterval),
+      );
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.reminderActiveWindows,
+        JSON.stringify(activeWindows),
+      );
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.reminderSoundEnabled,
+        String(soundEnabled),
+      );
+      await AsyncStorage.setItem(STORAGE_KEYS.reminderIds, JSON.stringify(ids));
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.reminderCustomTimes,
+        JSON.stringify(customTimes),
+      );
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.reminderCustomIds,
+        JSON.stringify(customIds),
+      );
+      await AsyncStorage.setItem(STORAGE_KEYS.reminderMode, reminderMode);
+      await AsyncStorage.setItem(STORAGE_KEYS.reminderEnabled, 'true');
+
+      setStatusMessage('Reminders set successfully.');
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : String(error ?? '');
+      setStatusError(
+        message
+          ? `Unable to schedule reminders: ${message}`
+          : 'Unable to schedule reminders. Please try again.',
+      );
     }
-
-    await AsyncStorage.setItem(
-      STORAGE_KEYS.reminderInterval,
-      String(reminderInterval),
-    );
-    await AsyncStorage.setItem(
-      STORAGE_KEYS.reminderActiveWindows,
-      JSON.stringify(activeWindows),
-    );
-    await AsyncStorage.setItem(
-      STORAGE_KEYS.reminderSoundEnabled,
-      String(soundEnabled),
-    );
-    await AsyncStorage.setItem(STORAGE_KEYS.reminderIds, JSON.stringify(ids));
-    await AsyncStorage.setItem(
-      STORAGE_KEYS.reminderCustomTimes,
-      JSON.stringify(customTimes),
-    );
-    await AsyncStorage.setItem(
-      STORAGE_KEYS.reminderCustomIds,
-      JSON.stringify(customIds),
-    );
-    await AsyncStorage.setItem(STORAGE_KEYS.reminderMode, reminderMode);
-    await AsyncStorage.setItem(STORAGE_KEYS.reminderEnabled, 'true');
-
-    setStatusMessage('Reminders set successfully.');
   }, [
     activeWindows,
     reminderInterval,
@@ -280,9 +298,11 @@ export const GoalsScreen: React.FC = () => {
     setStatusMessage('Reminders turned off.');
   }, []);
 
-  const addCustomTime = useCallback(() => {
-    const hour = customTimeDraft.getHours();
-    const minute = customTimeDraft.getMinutes();
+  const addCustomTime = useCallback((dateOverride?: unknown) => {
+    const date =
+      dateOverride instanceof Date ? dateOverride : customTimeDraft;
+    const hour = date.getHours();
+    const minute = date.getMinutes();
     const exists = customTimes.some(
       item => item.hour === hour && item.minute === minute,
     );
@@ -613,31 +633,48 @@ export const GoalsScreen: React.FC = () => {
         </Pressable>
       </Modal>
 
-      <Modal transparent animationType="fade" visible={customTimePickerVisible}>
-        <Pressable
-          style={styles.modalBackdrop}
-          onPress={() => setCustomTimePickerVisible(false)}
-        >
+      {Platform.OS === 'ios' ? (
+        <Modal transparent animationType="fade" visible={customTimePickerVisible}>
           <Pressable
-            style={[
-              styles.modalCard,
-              { backgroundColor: colors.surface, borderColor: colors.border },
-            ]}
-            onPress={() => {}}
+            style={styles.modalBackdrop}
+            onPress={() => setCustomTimePickerVisible(false)}
           >
-            <Text weight="semibold">Pick a time</Text>
-            <DateTimePicker
-              value={customTimeDraft}
-              mode="time"
-              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-              onChange={(event, date) => {
-                if (date) setCustomTimeDraft(date);
-              }}
-            />
-            <Button label="Add time" onPress={addCustomTime} />
+            <Pressable
+              style={[
+                styles.modalCard,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+              onPress={() => {}}
+            >
+              <Text weight="semibold">Pick a time</Text>
+              <DateTimePicker
+                value={customTimeDraft}
+                mode="time"
+                display="spinner"
+                onChange={(event, date) => {
+                  if (date) setCustomTimeDraft(date);
+                }}
+              />
+              <Button label="Add time" onPress={() => addCustomTime()} />
+            </Pressable>
           </Pressable>
-        </Pressable>
-      </Modal>
+        </Modal>
+      ) : null}
+
+      {Platform.OS === 'android' && customTimePickerVisible ? (
+        <DateTimePicker
+          value={customTimeDraft}
+          mode="time"
+          display="default"
+          onChange={(event, date) => {
+            setCustomTimePickerVisible(false);
+            if (date) {
+              setCustomTimeDraft(date);
+              addCustomTime(date);
+            }
+          }}
+        />
+      ) : null}
     </Screen>
   );
 };
