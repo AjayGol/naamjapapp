@@ -44,6 +44,7 @@ export const CounterScreen: React.FC = () => {
   const ringRadius = (ringSize - ringStroke) / 2;
   const circumference = 2 * Math.PI * ringRadius;
   const countScale = useRef(new Animated.Value(1)).current;
+  const sessionDateKeyRef = useRef<string | null>(null);
 
   const loadState = useCallback(async () => {
     const [
@@ -51,6 +52,7 @@ export const CounterScreen: React.FC = () => {
       targetRaw,
       mantraRaw,
       activeRaw,
+      sessionDateRaw,
       malaRaw,
       hintRaw,
       goalsRaw,
@@ -59,6 +61,7 @@ export const CounterScreen: React.FC = () => {
       AsyncStorage.getItem(STORAGE_KEYS.target),
       AsyncStorage.getItem(STORAGE_KEYS.activeMantra),
       AsyncStorage.getItem(STORAGE_KEYS.sessionActive),
+      AsyncStorage.getItem(STORAGE_KEYS.sessionDateKey),
       AsyncStorage.getItem(STORAGE_KEYS.malaCount),
       AsyncStorage.getItem(STORAGE_KEYS.tapHintSeen),
       AsyncStorage.getItem(STORAGE_KEYS.dailyGoals),
@@ -71,7 +74,8 @@ export const CounterScreen: React.FC = () => {
     const todayTarget = goals[getWeekdayKey()] || baseTarget;
     setTarget(todayTarget);
 
-    setCount(countRaw ? Number(countRaw) || 0 : 0);
+    const parsedCount = countRaw ? Number(countRaw) || 0 : 0;
+    setCount(parsedCount);
     if (mantraRaw) {
       setMantraName(mantraRaw);
     } else {
@@ -80,6 +84,18 @@ export const CounterScreen: React.FC = () => {
       AsyncStorage.setItem(STORAGE_KEYS.activeMantra, fallback);
     }
     setSessionActive(activeRaw === 'true');
+    if (parsedCount > 0) {
+      const fallbackKey = sessionDateRaw || getLocalDateKey();
+      sessionDateKeyRef.current = fallbackKey;
+      if (!sessionDateRaw) {
+        AsyncStorage.setItem(STORAGE_KEYS.sessionDateKey, fallbackKey);
+      }
+    } else {
+      sessionDateKeyRef.current = null;
+      if (sessionDateRaw) {
+        AsyncStorage.removeItem(STORAGE_KEYS.sessionDateKey);
+      }
+    }
     setMalaCount(malaRaw ? Number(malaRaw) || 0 : 0);
     setShowTapHint(hintRaw !== 'true');
   }, []);
@@ -129,9 +145,15 @@ export const CounterScreen: React.FC = () => {
       }
       const next = prev + 1;
       const todayKey = getLocalDateKey();
+      const sessionDateKey =
+        prev === 0 ? todayKey : sessionDateKeyRef.current || todayKey;
+      if (prev === 0 || !sessionDateKeyRef.current) {
+        sessionDateKeyRef.current = sessionDateKey;
+        AsyncStorage.setItem(STORAGE_KEYS.sessionDateKey, sessionDateKey);
+      }
       AsyncStorage.getItem(STORAGE_KEYS.dailyCounts).then(raw => {
         const data = raw ? (JSON.parse(raw) as Record<string, number>) : {};
-        data[todayKey] = (data[todayKey] || 0) + 1;
+        data[sessionDateKey] = (data[sessionDateKey] || 0) + 1;
         AsyncStorage.setItem(STORAGE_KEYS.dailyCounts, JSON.stringify(data));
       });
       Vibration.vibrate(10);
@@ -191,8 +213,10 @@ export const CounterScreen: React.FC = () => {
         setTimeout(() => {
           setCount(0);
           setSessionActive(true);
+          sessionDateKeyRef.current = null;
           AsyncStorage.setItem(STORAGE_KEYS.count, '0');
           AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'true');
+          AsyncStorage.removeItem(STORAGE_KEYS.sessionDateKey);
         }, 500);
       } else {
         setSessionActive(true);
@@ -235,7 +259,9 @@ export const CounterScreen: React.FC = () => {
     await Promise.all([
       AsyncStorage.setItem(STORAGE_KEYS.count, '0'),
       AsyncStorage.setItem(STORAGE_KEYS.sessionActive, 'false'),
+      AsyncStorage.removeItem(STORAGE_KEYS.sessionDateKey),
     ]);
+    sessionDateKeyRef.current = null;
     navigation.navigate('SelectNaam');
   }, [archiveCurrentSession, navigation]);
 

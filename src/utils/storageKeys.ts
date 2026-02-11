@@ -5,6 +5,7 @@ export const STORAGE_KEYS = {
   vibration: 'naamjap.vibrationEnabled',
   activeMantra: 'naamjap.activeMantra',
   sessionActive: 'naamjap.sessionActive',
+  sessionDateKey: 'naamjap.sessionDateKey',
   lastCompletedMantra: 'naamjap.lastCompletedMantra',
   lastCompletedAt: 'naamjap.lastCompletedAt',
   dailyCounts: 'naamjap.dailyCounts',

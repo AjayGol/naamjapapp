@@ -175,20 +175,19 @@ export const StatsScreen: React.FC = () => {
     barCount >= 28 ? 6 : barCount >= 24 ? 8 : barCount >= 16 ? 12 : barCount >= 10 ? 18 : 26;
   const spacing =
     barCount >= 28 ? 6 : barCount >= 24 ? 8 : barCount >= 16 ? 10 : barCount >= 10 ? 14 : 18;
-  const minHeight = 6;
+  const minHeight = 0;
   const hasData = total > 0;
   const chartData = bars.map(item => {
-    const value = item.value || 0;
-    const displayValue =
-      hasData && value === 0 && period !== 'yearly'
-        ? Math.max(1, Math.round(maxValue * 0.02))
-        : value;
     return {
-      value: displayValue,
+      value: item.value || 0,
       label: item.label || ' ',
       frontColor: colors.primary,
     };
   });
+  const chartKey = useMemo(
+    () => `${period}-${rangeLabel}-${bars.map(item => item.value).join(',')}`,
+    [bars, period, rangeLabel],
+  );
 
   return (
     <Screen>
@@ -291,6 +290,7 @@ export const StatsScreen: React.FC = () => {
       >
         {hasData ? (
           <BarChart
+            key={chartKey}
             data={chartData}
             height={210}
             barWidth={barWidth}
@@ -319,8 +319,7 @@ export const StatsScreen: React.FC = () => {
             barBorderRadius={12}
             frontColor={colors.primary}
             backgroundColor="transparent"
-            isAnimated
-            animationDuration={700}
+            isAnimated={false}
           />
         ) : (
           <View style={styles.emptyState}>
