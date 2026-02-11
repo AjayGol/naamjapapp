@@ -223,10 +223,28 @@ export const StatsScreen: React.FC = () => {
   const minHeight = 0;
   const hasData = total > 0;
   const isMonthly = period === 'monthly';
-  const monthlyEdgePadding = Math.max(12, Math.round(screenWidth * 0.03));
+  const isWeekly = period === 'weekly';
+  const slotWidth = availableChartWidth / Math.max(1, barCount);
+  const monthlyLabelWidth = Math.max(12, Math.min(18, Math.round(slotWidth * 0.8)));
+  const weeklyLabelWidth = Math.max(26, Math.min(36, Math.round(slotWidth * 0.9)));
+  const yearlyLabelWidth = Math.max(28, Math.min(40, Math.round(slotWidth * 0.9)));
+  const monthlyLeftPadding = Math.max(4, Math.round(monthlyLabelWidth * 0.25));
+  const monthlyRightPadding = Math.max(10, Math.round(monthlyLabelWidth * 0.55));
+  const weeklyLeftPadding = Math.max(4, Math.round(weeklyLabelWidth * 0.2));
+  const weeklyRightPadding = Math.max(14, Math.round(weeklyLabelWidth * 0.7));
+  const yearlyLeftPadding = Math.max(8, Math.round(yearlyLabelWidth * 0.3));
+  const yearlyRightPadding = Math.max(18, Math.round(yearlyLabelWidth * 0.75));
   const chartHeight = period === 'weekly' ? 236 : isMonthly ? 224 : 216;
-  const chartInitialSpacing = period === 'weekly' ? 8 : isMonthly ? monthlyEdgePadding : 12;
-  const chartEndSpacing = period === 'weekly' ? 8 : isMonthly ? monthlyEdgePadding : 12;
+  const chartInitialSpacing = isWeekly
+    ? weeklyLeftPadding
+    : isMonthly
+      ? monthlyLeftPadding
+      : yearlyLeftPadding;
+  const chartEndSpacing = isWeekly
+    ? weeklyRightPadding
+    : isMonthly
+      ? monthlyRightPadding
+      : yearlyRightPadding;
   const { barWidth, spacing } = useMemo(() => {
     if (period === 'weekly') {
       return fitBarsToWidth(
@@ -236,7 +254,7 @@ export const StatsScreen: React.FC = () => {
         16,
         24,
         6,
-        14,
+        36,
       );
     }
     if (period === 'monthly') {
@@ -257,7 +275,7 @@ export const StatsScreen: React.FC = () => {
       18,
       30,
       8,
-      24,
+      52,
     );
   }, [
     barCount,
@@ -266,12 +284,19 @@ export const StatsScreen: React.FC = () => {
     fitBarsToWidth,
     period,
   ]);
+  const baseLabelSlot = Math.max(
+    12,
+    Math.floor(
+      (availableChartWidth - chartInitialSpacing - chartEndSpacing) /
+        Math.max(1, barCount),
+    ),
+  );
   const labelWidth =
     period === 'monthly'
-      ? 13
+      ? Math.max(12, Math.min(monthlyLabelWidth, baseLabelSlot + 1))
       : period === 'yearly'
-        ? 34
-        : 34;
+        ? Math.max(24, Math.min(yearlyLabelWidth, baseLabelSlot + 2))
+        : Math.max(24, Math.min(weeklyLabelWidth, baseLabelSlot + 2));
   const chartMaxValue = hasData
     ? (() => {
         if (maxValue <= 10) return 10;
