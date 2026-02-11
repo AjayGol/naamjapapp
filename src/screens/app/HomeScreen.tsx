@@ -11,6 +11,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AppStackParamList } from '../../navigation/types';
 import { getStreaks, getWeekdayKey } from '../../utils/date';
 import LinearGradient from 'react-native-linear-gradient';
+import crashlytics from "@react-native-firebase/crashlytics";
 
 type SessionEntry = {
   id: string;
@@ -226,6 +227,7 @@ export const HomeScreen: React.FC = () => {
             { borderColor: colors.border, backgroundColor: colors.surface },
           ]}
         >
+
           <LinearGradient
             colors={[`${colors.primary}12`, colors.surface]}
             style={styles.heroGradient}
@@ -315,6 +317,11 @@ export const HomeScreen: React.FC = () => {
             ) : null}
           </View>
         </View>
+
+        {/*<Button*/}
+        {/*    label="Test Crash"*/}
+        {/*    onPress={() => crashlytics().crash()}*/}
+        {/*/>*/}
 
         <View style={styles.cardRow}>
           <Pressable
