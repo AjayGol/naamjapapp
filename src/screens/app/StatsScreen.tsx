@@ -225,7 +225,7 @@ export const StatsScreen: React.FC = () => {
   const isMonthly = period === 'monthly';
   const isWeekly = period === 'weekly';
   const slotWidth = availableChartWidth / Math.max(1, barCount);
-  const monthlyLabelWidth = Math.max(12, Math.min(18, Math.round(slotWidth * 0.8)));
+  const monthlyLabelWidth = Math.max(10, Math.min(18, Math.round(slotWidth * 0.8)));
   const weeklyLabelWidth = Math.max(26, Math.min(36, Math.round(slotWidth * 0.9)));
   const yearlyLabelWidth = Math.max(28, Math.min(40, Math.round(slotWidth * 0.9)));
   const monthlyLeftPadding = Math.max(4, Math.round(monthlyLabelWidth * 0.2));
@@ -265,7 +265,7 @@ export const StatsScreen: React.FC = () => {
         3,
         5,
         2,
-        8,
+        6,
       );
     }
     return fitBarsToWidth(
