@@ -23,7 +23,7 @@ import { STORAGE_KEYS } from '../../utils/storageKeys';
 import { getLocalDateKey } from '../../utils/date';
 
 export const SettingsScreen: React.FC = () => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const dispatch = useAppDispatch();
   const mode = useAppSelector(state => state.settings.themeMode);
   const navigation =
@@ -550,40 +550,40 @@ export const SettingsScreen: React.FC = () => {
           </Pressable>
         </View>
 
-        <View style={styles.footer}>
-          <Text variant="sm" color="textSecondary">
-            Let’s Connect
-          </Text>
-          <View style={styles.socialRow}>
-            <Icon
-              iconSet="MaterialIcons"
-              iconName="mail-outline"
-              size={22}
-              color={colors.textSecondary}
-            />
-            <Icon
-              iconSet="MaterialIcons"
-              iconName="language"
-              size={22}
-              color={colors.textSecondary}
-            />
-            <Icon
-              iconSet="MaterialIcons"
-              iconName="alternate-email"
-              size={22}
-              color={colors.textSecondary}
-            />
-            <Icon
-              iconSet="MaterialIcons"
-              iconName="camera-alt"
-              size={22}
-              color={colors.textSecondary}
-            />
-          </View>
-          <Text variant="xs" color="textSecondary">
-            Version 1.0.12
-          </Text>
-        </View>
+        {/*<View style={styles.footer}>*/}
+        {/*  <Text variant="sm" color="textSecondary">*/}
+        {/*    Let’s Connect*/}
+        {/*  </Text>*/}
+        {/*  <View style={styles.socialRow}>*/}
+        {/*    <Icon*/}
+        {/*      iconSet="MaterialIcons"*/}
+        {/*      iconName="mail-outline"*/}
+        {/*      size={22}*/}
+        {/*      color={colors.textSecondary}*/}
+        {/*    />*/}
+        {/*    <Icon*/}
+        {/*      iconSet="MaterialIcons"*/}
+        {/*      iconName="language"*/}
+        {/*      size={22}*/}
+        {/*      color={colors.textSecondary}*/}
+        {/*    />*/}
+        {/*    <Icon*/}
+        {/*      iconSet="MaterialIcons"*/}
+        {/*      iconName="alternate-email"*/}
+        {/*      size={22}*/}
+        {/*      color={colors.textSecondary}*/}
+        {/*    />*/}
+        {/*    <Icon*/}
+        {/*      iconSet="MaterialIcons"*/}
+        {/*      iconName="camera-alt"*/}
+        {/*      size={22}*/}
+        {/*      color={colors.textSecondary}*/}
+        {/*    />*/}
+        {/*  </View>*/}
+        {/*  <Text variant="xs" color="textSecondary">*/}
+        {/*    Version 1.0.12*/}
+        {/*  </Text>*/}
+        {/*</View>*/}
       </ScrollView>
 
       {Platform.OS === 'android' && showDatePicker ? (
@@ -592,6 +592,8 @@ export const SettingsScreen: React.FC = () => {
           mode="date"
           display="calendar"
           locale="en-US"
+          themeVariant={isDark ? 'dark' : 'light'}
+          textColor={colors.textPrimary}
           minimumDate={minResetDate}
           maximumDate={maxResetDate}
           onChange={(event, date) => {
@@ -641,6 +643,8 @@ export const SettingsScreen: React.FC = () => {
                   mode="date"
                   display="spinner"
                   locale="en-US"
+                  themeVariant={isDark ? 'dark' : 'light'}
+                  textColor={colors.textPrimary}
                   minimumDate={minResetDate}
                   maximumDate={maxResetDate}
                   onChange={(event, date) => {

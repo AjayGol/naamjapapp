@@ -419,7 +419,7 @@ export const StatsScreen: React.FC = () => {
             { backgroundColor: colors.surface, borderColor: colors.border },
           ]}
         >
-          <Text style={styles.metricValue}>
+          <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
             {total}
           </Text>
           <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
@@ -432,7 +432,7 @@ export const StatsScreen: React.FC = () => {
             { backgroundColor: colors.surface, borderColor: colors.border },
           ]}
         >
-          <Text style={styles.metricValue}>
+          <Text style={[styles.metricValue, { color: colors.textPrimary }]}>
             {avg}
           </Text>
           <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
@@ -482,7 +482,11 @@ export const StatsScreen: React.FC = () => {
           />
         </View>
       </View>
-      <Text variant="sm" weight="semibold" style={styles.bottomLine}>
+      <Text
+        variant="sm"
+        weight="semibold"
+        style={[styles.bottomLine, { color: colors.textPrimary }]}
+      >
         Count: {total} | Malas: {malaCount}
       </Text>
     </Screen>
@@ -534,7 +538,6 @@ const styles = StyleSheet.create({
     fontSize: 42,
     lineHeight: 46,
     fontWeight: '700',
-    color: '#111111',
   },
   metricLabel: {
     marginTop: 6,
@@ -579,6 +582,5 @@ const styles = StyleSheet.create({
     marginTop: 12,
     fontSize: 16,
     lineHeight: 22,
-    color: '#111111',
   },
 });

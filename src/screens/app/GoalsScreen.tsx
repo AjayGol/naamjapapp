@@ -42,7 +42,7 @@ type WindowOption = {
 };
 
 export const GoalsScreen: React.FC = () => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const navigation =
     useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const intervalOptions = useMemo(() => [15, 30, 45, 60, 90, 120], []);
@@ -651,6 +651,8 @@ export const GoalsScreen: React.FC = () => {
                 value={customTimeDraft}
                 mode="time"
                 display="spinner"
+                themeVariant={isDark ? 'dark' : 'light'}
+                textColor={colors.textPrimary}
                 onChange={(event, date) => {
                   if (date) setCustomTimeDraft(date);
                 }}
