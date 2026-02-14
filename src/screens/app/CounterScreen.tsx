@@ -3,10 +3,11 @@ import {
   View,
   StyleSheet,
   Pressable,
-  Vibration,
   Animated,
   Modal,
+  Platform,
 } from 'react-native';
+import HapticFeedback from 'react-native-haptic-feedback';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Screen, Text, Divider, Icon, AppHeader } from '../../components';
 import { useTheme } from '../../hooks/useTheme';
@@ -37,7 +38,9 @@ export const CounterScreen: React.FC = () => {
   const [malaCount, setMalaCount] = useState(0);
   const [showTapHint, setShowTapHint] = useState(true);
   const [showSwitchMantraModal, setShowSwitchMantraModal] = useState(false);
+  const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastHapticAt = useRef(0);
   const progress = target > 0 ? Math.min(count / target, 1) : 0;
   const ringSize = 260;
   const ringStroke = 16;
@@ -56,6 +59,7 @@ export const CounterScreen: React.FC = () => {
       malaRaw,
       hintRaw,
       goalsRaw,
+      hapticsRaw,
     ] = await Promise.all([
       AsyncStorage.getItem(STORAGE_KEYS.count),
       AsyncStorage.getItem(STORAGE_KEYS.target),
@@ -65,6 +69,7 @@ export const CounterScreen: React.FC = () => {
       AsyncStorage.getItem(STORAGE_KEYS.malaCount),
       AsyncStorage.getItem(STORAGE_KEYS.tapHintSeen),
       AsyncStorage.getItem(STORAGE_KEYS.dailyGoals),
+      AsyncStorage.getItem(STORAGE_KEYS.vibration),
     ]);
 
     const baseTarget = targetRaw ? Number(targetRaw) || 108 : 108;
@@ -98,7 +103,22 @@ export const CounterScreen: React.FC = () => {
     }
     setMalaCount(malaRaw ? Number(malaRaw) || 0 : 0);
     setShowTapHint(hintRaw !== 'true');
+    setHapticsEnabled(hapticsRaw !== 'false');
   }, []);
+
+  const triggerTapHaptic = useCallback(() => {
+    if (!hapticsEnabled) return;
+    const now = Date.now();
+    if (now - lastHapticAt.current < 140) return;
+    lastHapticAt.current = now;
+    HapticFeedback.trigger(
+      Platform.OS === 'ios' ? 'impactLight' : 'keyboardTap',
+      {
+        enableVibrateFallback: false,
+        ignoreAndroidSystemSettings: false,
+      },
+    );
+  }, [hapticsEnabled]);
 
   useFocusEffect(
     useCallback(() => {
@@ -156,7 +176,7 @@ export const CounterScreen: React.FC = () => {
         data[sessionDateKey] = (data[sessionDateKey] || 0) + 1;
         AsyncStorage.setItem(STORAGE_KEYS.dailyCounts, JSON.stringify(data));
       });
-      Vibration.vibrate(2);
+      triggerTapHaptic();
       Animated.sequence([
         Animated.timing(countScale, {
           toValue: 1.08,
@@ -223,7 +243,7 @@ export const CounterScreen: React.FC = () => {
       }
       return next;
     });
-  }, [countScale, mantraName, target]);
+  }, [countScale, mantraName, target, triggerTapHaptic]);
 
   const archiveCurrentSession = useCallback(async () => {
     if (!mantraName.trim() || count <= 0) return;

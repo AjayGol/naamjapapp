@@ -170,6 +170,17 @@ export const SettingsScreen: React.FC = () => {
   };
 
   useEffect(() => {
+    AsyncStorage.getItem(STORAGE_KEYS.vibration).then(raw => {
+      if (raw == null) return;
+      setHapticsEnabled(raw === 'true');
+    });
+  }, []);
+
+  useEffect(() => {
+    AsyncStorage.setItem(STORAGE_KEYS.vibration, String(hapticsEnabled));
+  }, [hapticsEnabled]);
+
+  useEffect(() => {
     return () => {
       if (resetToastTimer.current) {
         clearTimeout(resetToastTimer.current);
