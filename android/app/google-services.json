@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "19739331512",
+    "project_id": "naamjapapp-72fb0",
+    "storage_bucket": "naamjapapp-72fb0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:19739331512:android:db9d1ed593c3ed7baa5d4d",
+        "android_client_info": {
+          "package_name": "com.naamjap.dailymantra.radha"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAJKCkHawc4aLjYGj0wEfqPJhBbL3EqQp4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
